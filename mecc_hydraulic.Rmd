@@ -14,50 +14,71 @@ ggplot2::theme_set(theme_classic())
 
 ```{r message=FALSE, warning=FALSE}
 prep_xs <- function(data, sta, elev, delta_x=0.1) {
-  data %>%
+  result <- data %>%
     arrange({{sta}}) %>%
     mutate(sta = {{sta}}) %>%
     complete(sta = seq(from = min({{sta}}), to = max({{sta}}), by = delta_x)) %>%
     mutate(gse = zoo::na.approx({{elev}}, x = sta)) %>% 
     select(c(sta, gse))
+  
+  # further densify in the vertical direction
+  d <- result %>% 
+      arrange(-sta) %>%
+      mutate(delta_x = abs(lag(sta, 1) - sta),
+             delta_z = abs(lag(gse, 1) - gse),
+             multiplier = replace_na(ceiling(delta_z/delta_x),1)) %>% 
+      arrange(sta)
+  idx <- rep(1:nrow(d), d$multiplier)
+  return(
+    d[idx,] %>% 
+    mutate(gse = case_when(duplicated(sta) ~ NA, TRUE ~ gse),
+           sta = case_when(duplicated(sta) ~ NA, TRUE ~ sta)) %>%
+    mutate(gse = zoo::na.approx(gse, na.rm = FALSE),
+           sta = zoo::na.approx(sta, na.rm = FALSE)) %>%
+    select(sta, gse) %>% drop_na() 
+  )
+  
 }
+
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2006 <- read_csv("data/xs_2006.csv") %>%
-  prep_xs(sta = station_left_bank_ft, elev = elevation_ngvd29_ft) 
+xs_2007 <- read_csv("data/xs_2007.csv") %>%
+  prep_xs(sta = station_ft, elev = elevation_ft) 
 
-xs_2006 %>% ggplot(aes(y = gse, x = sta)) + geom_line() + 
-  ylab("Elevation") + xlab("Station") + ggtitle("2006 As Built")
+xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
+  ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2007 Baseline")
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2023 <- read_csv("data/xs_2023.csv") %>%
-  prep_xs(sta = station_left_bank_ft, elev = elevation_ngvd29_ft) 
+xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>%
+  prep_xs(sta = station_ft, elev = elevation_ft) 
 
-xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_line() + 
-  ylab("Elevation") + xlab("Station") + ggtitle("2023 Design")
+xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
+  ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2023 Proposed")
 ```
+
+
+
 
 ```{r message=FALSE, warning=FALSE}
 ggplot() + 
-  geom_line(data = xs_2006, aes(x = sta, y = gse, color = "2006 As Built")) +
-  geom_line(data = xs_2023, aes(x = sta, y = gse, color = "2023 Design")) +
-  ylab("Station (ft)") + xlab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank())
+  geom_line(data = xs_2007, aes(x = sta, y = gse, color = "2007 Baseline")) +
+  geom_line(data = xs_2023, aes(x = sta, y = gse, color = "2023 Proposed")) +
+  ylab("Elevation (ft)") + xlab("Station (ft)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
 # Calculate depth-discharge rating curves 
 
 ```{r message=FALSE, warning=FALSE}
-# slope = average of upstream and downstream (normal depth assumption)
-#slope_us <- 1 / 26.2 # V ft / H ft from 37ft to 36ft contour in SURF-CLEAN-2017.dwg
-#slope_ds <- 1 / 14.7 # V ft / H ft from 36ft to 35ft contour in SURF-CLEAN-2017.dwg
-#model_slope <- mean(c(slope_us, slope_ds)) # V ft / H ft
-model_slope <- round(2 / (26.2 + 14.7), 2) # V ft / H ft
 
-# roughness coefficient (Chow, 1959) for "Gravel bottom with sides of formed concrete", upper estimate
-model_roughness <- 0.025 # n
+model_slope <- (38.6-38.0) / 28.65
+
+model_roughness <- 0.035 # n
+
+print(c("model_slope" = model_slope, "model_roughness" = model_roughness))
 ```
+
 
 ```{r message=FALSE, warning=FALSE}
 calc_xs <- function(data, water_elev) {
@@ -87,18 +108,19 @@ calculate_rating_curve <- function(data, slope, mannings_n, delta_y=0.1) {
     unnest_wider(col = result) %>%
     drop_na() %>%
     mutate(discharge_cfs = 1.486 * cross_sectional_area * 
-             (cross_sectional_area / wetted_perimeter)^(2/3) * slope^(1/2) * mannings_n^(-1)) %>%
+             (cross_sectional_area / wetted_perimeter)^(2/3) * slope^(1/2) * mannings_n^(-1),
+           velocity_ft_s = discharge_cfs / cross_sectional_area) %>%
     arrange(discharge_cfs)
 }
 ```
 
 ```{r message=FALSE }
-depth_vs_discharge_2006 <- xs_2006 %>% 
+depth_vs_discharge_2007 <- xs_2007 %>% 
   calculate_rating_curve(slope = model_slope,
                          mannings_n = model_roughness)
-depth_vs_discharge_2006 %>% 
+depth_vs_discharge_2007 %>% 
   ggplot(aes(y = max_depth, x = discharge_cfs)) + 
-  geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2006 As Built")
+  geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2007 Baseline")
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -107,22 +129,26 @@ depth_vs_discharge_2023 <- xs_2023 %>%
                          mannings_n = model_roughness)
 depth_vs_discharge_2023 %>% 
   ggplot(aes(y = max_depth, x = discharge_cfs)) + 
-  geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2023 Design") 
+  geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2023 Proposed") 
 ```
 
 ```{r message=FALSE, warning=FALSE}
 ggplot() +
-  geom_line(data = depth_vs_discharge_2006, aes(y = max_depth, x = discharge_cfs, color = "2006 As Built")) +
-  geom_line(data = depth_vs_discharge_2023, aes(y = max_depth, x = discharge_cfs, color = "2023 Design")) + 
+  geom_line(data = depth_vs_discharge_2007, aes(y = max_depth, x = discharge_cfs, color = "2007 Baseline")) +
+  geom_line(data = depth_vs_discharge_2023, aes(y = max_depth, x = discharge_cfs, color = "2023 Proposed")) + 
   ylab("Depth (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
-
-# consider also showing these as elevation vs discharge, if the thalweg elevation has changed
+```
+```{r message=FALSE, warning=FALSE}
+ggplot() +
+  geom_line(data = depth_vs_discharge_2007, aes(y = water_surface_elevation, x = discharge_cfs, color = "2007 Baseline")) +
+  geom_line(data = depth_vs_discharge_2023, aes(y = water_surface_elevation, x = discharge_cfs, color = "2023 Proposed")) + 
+  ylab("Water Surface Elevation (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
 # Interpolate water surface for selected discharge
 
 ```{r message=FALSE, warning=FALSE}
-model_discharge <- 5000 # cfs
+model_discharge <- 3980 # cfs
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -137,8 +163,8 @@ interpolate_rating_curve <- function(data, discharge) {
 ```
 
 ```{r message=FALSE, warning=FALSE}
-wse_2006 <- depth_vs_discharge_2006 %>% interpolate_rating_curve(model_discharge)
-print(c("wse 2006" = wse_2006))
+wse_2007 <- depth_vs_discharge_2007 %>% interpolate_rating_curve(model_discharge)
+print(c("wse 2007" = wse_2007))
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -147,7 +173,7 @@ print(c("wse 2023" = wse_2023))
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2006 %>% calc_xs(wse_2006)
+xs_2007 %>% calc_xs(wse_2007)
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -157,12 +183,12 @@ xs_2023 %>% calc_xs(wse_2023)
 # Plot outputs
 
 ```{r message=FALSE, warning=FALSE}
-xs_2006 %>% arrange(sta) %>%
-      mutate(wse = case_when(wse_2006 > gse ~ wse_2006)) %>%
+xs_2007 %>% arrange(sta) %>%
+      mutate(wse = case_when(wse_2007 > gse ~ wse_2007)) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2006 As Built")
+      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2007 Baseline")
 ```
 ```{r message=FALSE, warning=FALSE}
 xs_2023 %>% arrange(sta) %>%
@@ -170,19 +196,34 @@ xs_2023 %>% arrange(sta) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2023 Design")
+      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2023 Proposed")
 ```
 
 ```{r message=FALSE, warning=FALSE}
 ggplot() + 
-  geom_line(data = xs_2006, aes(x = sta, y = gse, color = "2006 As Built", linetype = "Terrain")) +
-  geom_line(data = xs_2023, aes(x = sta, y = gse, color = "2023 Design", linetype = "Terrain")) +
-  geom_line(data = xs_2006, aes(x = sta, y = case_when(wse_2006 > gse ~ wse_2006), 
-                                color = "2006 As Built", linetype = "Water Surface")) + 
+  geom_line(data = xs_2007, aes(x = sta, y = gse, color = "2007 Baseline", linetype = "Terrain")) +
+  geom_line(data = xs_2023, aes(x = sta, y = gse, color = "2023 Proposed", linetype = "Terrain")) +
+  geom_line(data = xs_2007, aes(x = sta, y = case_when(wse_2007 > gse ~ wse_2007), 
+                                color = "2007 Baseline", linetype = "Water Surface")) + 
   geom_line(data = xs_2023, aes(x = sta, y = case_when(wse_2023 > gse ~ wse_2023), 
-                                color = "2023 Design", linetype = "Water Surface")) + 
+                                color = "2023 Proposed", linetype = "Water Surface")) + 
       ylab("Station (ft)") + xlab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
+Calculate design velocity for 2023
 
+```{r message=FALSE, warning=FALSE}
+
+velocity_2007 <- model_discharge / calc_xs(xs_2007, wse_2007)$cross_sectional_area
+print(velocity_2007)
+
+```
+
+
+```{r message=FALSE, warning=FALSE}
+
+velocity_2023 <- model_discharge / calc_xs(xs_2023, wse_2023)$cross_sectional_area
+print(velocity_2023)
+
+```
 
