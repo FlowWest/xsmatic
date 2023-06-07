@@ -3,8 +3,6 @@ title: "MECC Hydraulic Analysis"
 output: html_document
 ---
 
-NOTE: This is currently using sample cross section data from another project
-
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 ggplot2::theme_set(theme_classic())
@@ -47,15 +45,15 @@ xs_2007 <- read_csv("data/xs_2007.csv") %>%
   prep_xs(sta = station_ft, elev = elevation_ft) 
 
 xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
-  ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2007 Baseline")
+  ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>%
+xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
   prep_xs(sta = station_ft, elev = elevation_ft) 
 
 xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
-  ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2023 Proposed")
+  ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
 ```
 
 
@@ -65,7 +63,7 @@ xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() +
 ggplot() + 
   geom_line(data = xs_2007, aes(x = sta, y = gse, color = "2007 Baseline")) +
   geom_line(data = xs_2023, aes(x = sta, y = gse, color = "2023 Proposed")) +
-  ylab("Elevation (ft)") + xlab("Station (ft)") + theme(legend.position="top", legend.title=element_blank())
+  ylab("Elevation (ft)") + xlab("Station (ft)") + theme(legend.position="top", legend.title=element_blank())  + coord_fixed(ratio = 1)
 ```
 
 # Calculate depth-discharge rating curves 
@@ -78,7 +76,7 @@ model_roughness <- 0.035 # n
 
 print(c("model_slope" = model_slope, "model_roughness" = model_roughness))
 ```
-
+Future improvement to script should allow different slope and roughness for each scenario.
 
 ```{r message=FALSE, warning=FALSE}
 calc_xs <- function(data, water_elev) {
@@ -95,7 +93,7 @@ calc_xs <- function(data, water_elev) {
               water_surface_elevation = water_elev,
               max_depth = water_surface_elevation - thalweg_elevation,
               cross_sectional_area = sum(delta_x * depth),
-              wetted_perimeter = sum(hyp_length),
+              wetted_perimeter = sum(hyp_length)
     ) %>% 
     as.list() %>% 
     list_flatten()
@@ -117,7 +115,7 @@ calculate_rating_curve <- function(data, slope, mannings_n, delta_y=0.1) {
 ```{r message=FALSE }
 depth_vs_discharge_2007 <- xs_2007 %>% 
   calculate_rating_curve(slope = model_slope,
-                         mannings_n = model_roughness)
+                         mannings_n = model_roughness) # 0.030) #model_roughness)
 depth_vs_discharge_2007 %>% 
   ggplot(aes(y = max_depth, x = discharge_cfs)) + 
   geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2007 Baseline")
@@ -145,7 +143,9 @@ ggplot() +
   ylab("Water Surface Elevation (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
-# Interpolate water surface for selected discharge
+Future improvement to script should include functions to avoid duplication:
+
+# Interpolate water surface for selected discharge - Q100
 
 ```{r message=FALSE, warning=FALSE}
 model_discharge <- 3980 # cfs
@@ -180,7 +180,7 @@ xs_2007 %>% calc_xs(wse_2007)
 xs_2023 %>% calc_xs(wse_2023)
 ```
 
-# Plot outputs
+## Plot outputs
 
 ```{r message=FALSE, warning=FALSE}
 xs_2007 %>% arrange(sta) %>%
@@ -188,7 +188,7 @@ xs_2007 %>% arrange(sta) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2007 Baseline")
+      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
 ```
 ```{r message=FALSE, warning=FALSE}
 xs_2023 %>% arrange(sta) %>%
@@ -196,7 +196,7 @@ xs_2023 %>% arrange(sta) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2023 Proposed")
+      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -207,7 +207,7 @@ ggplot() +
                                 color = "2007 Baseline", linetype = "Water Surface")) + 
   geom_line(data = xs_2023, aes(x = sta, y = case_when(wse_2023 > gse ~ wse_2023), 
                                 color = "2023 Proposed", linetype = "Water Surface")) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank())
+      ylab("Station (ft)") + xlab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1)
 ```
 
 Calculate design velocity for 2023
@@ -227,3 +227,74 @@ print(velocity_2023)
 
 ```
 
+
+
+# Interpolate water surface for selected discharge - Q2
+
+```{r message=FALSE, warning=FALSE}
+model_discharge <- 513 # cfs
+```
+
+```{r message=FALSE, warning=FALSE}
+wse_2007_Q2 <- depth_vs_discharge_2007 %>% interpolate_rating_curve(model_discharge)
+print(c("wse 2007" = wse_2007_Q2))
+```
+
+```{r message=FALSE, warning=FALSE}
+wse_2023_Q2 <- depth_vs_discharge_2023 %>% interpolate_rating_curve(model_discharge)
+print(c("wse 2023" = wse_2023_Q2))
+```
+
+```{r message=FALSE, warning=FALSE}
+xs_2007 %>% calc_xs(wse_2007_Q2)
+```
+
+```{r message=FALSE, warning=FALSE}
+xs_2023 %>% calc_xs(wse_2023_Q2)
+```
+
+## Plot outputs
+
+```{r message=FALSE, warning=FALSE}
+xs_2007 %>% arrange(sta) %>%
+      mutate(wse = case_when(wse_2007_Q2 > gse ~ wse_2007_Q2)) %>%
+      ggplot(aes(x = sta)) + 
+      geom_line(aes(y = gse)) + 
+      geom_line(aes(y = wse)) + 
+      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
+```
+```{r message=FALSE, warning=FALSE}
+xs_2023 %>% arrange(sta) %>%
+      mutate(wse = case_when(wse_2023_Q2 > gse ~ wse_2023_Q2)) %>%
+      ggplot(aes(x = sta)) + 
+      geom_line(aes(y = gse)) + 
+      geom_line(aes(y = wse)) + 
+      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot() + 
+  geom_line(data = xs_2007, aes(x = sta, y = gse, color = "2007 Baseline", linetype = "Terrain")) +
+  geom_line(data = xs_2023, aes(x = sta, y = gse, color = "2023 Proposed", linetype = "Terrain")) +
+  geom_line(data = xs_2007, aes(x = sta, y = case_when(wse_2007_Q2 > gse ~ wse_2007_Q2), 
+                                color = "2007 Baseline", linetype = "Water Surface")) + 
+  geom_line(data = xs_2023, aes(x = sta, y = case_when(wse_2023_Q2 > gse ~ wse_2023_Q2), 
+                                color = "2023 Proposed", linetype = "Water Surface")) + 
+      ylab("Station (ft)") + xlab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1)
+```
+
+Calculate design velocity for 2023
+
+```{r message=FALSE, warning=FALSE}
+
+velocity_2007_Q2 <- model_discharge / calc_xs(xs_2007, wse_2007_Q2)$cross_sectional_area
+print(velocity_2007_Q2)
+
+```
+
+```{r message=FALSE, warning=FALSE}
+
+velocity_2023_Q2 <- model_discharge / calc_xs(xs_2023, wse_2023_Q2)$cross_sectional_area
+print(velocity_2023_Q2)
+
+```
