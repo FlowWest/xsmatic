@@ -188,7 +188,7 @@ xs_2007 %>% arrange(sta) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
+      xlab("Station (ft)") + ylab("Elevation (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
 ```
 ```{r message=FALSE, warning=FALSE}
 xs_2023 %>% arrange(sta) %>%
@@ -196,7 +196,7 @@ xs_2023 %>% arrange(sta) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
+      xlab("Station (ft)") + ylab("Elevation (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -207,7 +207,7 @@ ggplot() +
                                 color = "2007 Baseline", linetype = "Water Surface")) + 
   geom_line(data = xs_2023, aes(x = sta, y = case_when(wse_2023 > gse ~ wse_2023), 
                                 color = "2023 Proposed", linetype = "Water Surface")) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1)
+      xlab("Station (ft)") + ylab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1)
 ```
 
 Calculate design velocity for 2023
@@ -261,7 +261,7 @@ xs_2007 %>% arrange(sta) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
+      xlab("Station (ft)") + ylab("Elevation (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
 ```
 ```{r message=FALSE, warning=FALSE}
 xs_2023 %>% arrange(sta) %>%
@@ -269,7 +269,7 @@ xs_2023 %>% arrange(sta) %>%
       ggplot(aes(x = sta)) + 
       geom_line(aes(y = gse)) + 
       geom_line(aes(y = wse)) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
+      xlab("Station (ft)") + ylab("Elevation (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -280,7 +280,7 @@ ggplot() +
                                 color = "2007 Baseline", linetype = "Water Surface")) + 
   geom_line(data = xs_2023, aes(x = sta, y = case_when(wse_2023_Q2 > gse ~ wse_2023_Q2), 
                                 color = "2023 Proposed", linetype = "Water Surface")) + 
-      ylab("Station (ft)") + xlab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1)
+      xlab("Station (ft)") + ylab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1)
 ```
 
 Calculate design velocity for 2023
