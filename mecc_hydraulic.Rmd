@@ -283,7 +283,9 @@ ggplot() +
       xlab("Station (ft)") + ylab("Elevation (ft)") + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1)
 ```
 
-Calculate design velocity for 2023
+## Output design velocities
+
+Calculate design velocity based on Q2 flow
 
 ```{r message=FALSE, warning=FALSE}
 
@@ -298,3 +300,25 @@ velocity_2023_Q2 <- model_discharge / calc_xs(xs_2023, wse_2023_Q2)$cross_sectio
 print(velocity_2023_Q2)
 
 ```
+
+Calculate design velocities based on all modeled flood events from Q2 to Q100
+
+```{r message=FALSE, warning=FALSE}
+streamstats_result <- tribble(~return_interval, ~discharge,
+                              2 ,   513,
+                              5,   1320,
+                              10,  1970,
+                              25,  2780,
+                              50,  3360,
+                              100, 3980 ) 
+
+streamstats_result %>%
+  mutate(xs_area_2007 = map_dbl(discharge, function(discharge) {depth_vs_discharge_2007 %>% interpolate_rating_curve(., discharge) %>% calc_xs(xs_2007, .) %>% .$cross_sectional_area}),
+         xs_area_2023 = map_dbl(discharge, function(discharge) {depth_vs_discharge_2023 %>% interpolate_rating_curve(., discharge) %>% calc_xs(xs_2023, .) %>% .$cross_sectional_area}),
+         velocity_2007 = discharge / xs_area_2007,
+         velocity_2023 = discharge / xs_area_2023
+         )
+```
+
+
+
