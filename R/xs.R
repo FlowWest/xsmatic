@@ -1,3 +1,5 @@
+library(tidyverse)
+
 #' Input a table of station-elevation cross section coordinates, such as from a rod-and-level survey.
 #' Output a data frame with densified coordinates that can be used for post-processing.
 #' @param data A tibble or data frame containing station-elevation pairs
