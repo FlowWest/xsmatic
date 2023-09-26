@@ -3,8 +3,6 @@ title: "MECC Hydraulic Analysis"
 author: "FlowWest"
 date: "12 June 2023"
 output: 
-  html_document:
-    default
   github_document:
     default
 ---
@@ -12,39 +10,10 @@ output:
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 ggplot2::theme_set(theme_classic())
+source("R/xs.R")
 ```
 
 ## Import cross sections
-
-```{r message=FALSE, warning=FALSE}
-prep_xs <- function(data, sta, elev, delta_x=0.1) {
-  result <- data %>%
-    arrange({{sta}}) %>%
-    mutate(sta = {{sta}}) %>%
-    complete(sta = seq(from = min({{sta}}), to = max({{sta}}), by = delta_x)) %>%
-    mutate(gse = zoo::na.approx({{elev}}, x = sta)) %>% 
-    select(c(sta, gse))
-  
-  # further densify in the vertical direction
-  d <- result %>% 
-      arrange(-sta) %>%
-      mutate(delta_x = abs(lag(sta, 1) - sta),
-             delta_z = abs(lag(gse, 1) - gse),
-             multiplier = replace_na(ceiling(delta_z/delta_x),1)) %>% 
-      arrange(sta)
-  idx <- rep(1:nrow(d), d$multiplier)
-  return(
-    d[idx,] %>% 
-    mutate(gse = case_when(duplicated(sta) ~ NA, TRUE ~ gse),
-           sta = case_when(duplicated(sta) ~ NA, TRUE ~ sta)) %>%
-    mutate(gse = zoo::na.approx(gse, na.rm = FALSE),
-           sta = zoo::na.approx(sta, na.rm = FALSE)) %>%
-    select(sta, gse) %>% drop_na() 
-  )
-  
-}
-
-```
 
 ```{r message=FALSE, warning=FALSE}
 xs_2007 <- read_csv("data/xs_2007.csv") %>%
@@ -61,9 +30,6 @@ xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
 xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
   ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
 ```
-
-
-
 
 ```{r message=FALSE, warning=FALSE}
 ggplot() + 
@@ -82,41 +48,8 @@ model_roughness <- 0.035 # n
 
 print(c("model_slope" = model_slope, "model_roughness" = model_roughness))
 ```
-Future improvement to script should allow different slope and roughness for each scenario.
 
-```{r message=FALSE, warning=FALSE}
-calc_xs <- function(data, water_elev) {
-  data %>% 
-    arrange(sta) %>%
-    mutate(wse = case_when(water_elev > gse ~ water_elev),
-           delta_x = abs(lag(sta, 1) - sta),
-           delta_z = abs(lag(gse, 1) - gse),
-           depth = wse - gse, 
-           hyp_length = sqrt(delta_x^2 + delta_z^2)
-    ) %>%
-    filter(!is.na(wse)) %>% 
-    summarize(thalweg_elevation = min(gse),
-              water_surface_elevation = water_elev,
-              max_depth = water_surface_elevation - thalweg_elevation,
-              cross_sectional_area = sum(delta_x * depth),
-              wetted_perimeter = sum(hyp_length)
-    ) %>% 
-    as.list() %>% 
-    list_flatten()
-}
-
-calculate_rating_curve <- function(data, slope, mannings_n, delta_y=0.1) {
-  depth_vs_wse <- seq(from=min(data$gse)+delta_y, to=max(data$gse), by=delta_y) %>% 
-    as_tibble() %>%
-    mutate(result = map(value, function(x){calc_xs(data = data, water_elev = x)})) %>% 
-    unnest_wider(col = result) %>%
-    drop_na() %>%
-    mutate(discharge_cfs = 1.486 * cross_sectional_area * 
-             (cross_sectional_area / wetted_perimeter)^(2/3) * slope^(1/2) * mannings_n^(-1),
-           velocity_ft_s = discharge_cfs / cross_sectional_area) %>%
-    arrange(discharge_cfs)
-}
-```
+*Future improvement to script should allow different slope and roughness for each scenario.*
 
 ```{r message=FALSE }
 depth_vs_discharge_2007 <- xs_2007 %>% 
@@ -149,7 +82,7 @@ ggplot() +
   ylab("Water Surface Elevation (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
-Future improvement to script should include functions for the following analyses to avoid duplication.
+*Future improvement to script should include functions for the following analyses to avoid duplication.*
 
 ## Q100
 
@@ -157,17 +90,6 @@ Future improvement to script should include functions for the following analyses
 
 ```{r message=FALSE, warning=FALSE}
 model_discharge <- 3980 # cfs
-```
-
-```{r message=FALSE, warning=FALSE}
-interpolate_rating_curve <- function(data, discharge) {
-  data %>%
-    bind_rows(tribble(~selected_water_level, ~discharge_cfs, TRUE, discharge)) %>%
-    arrange(discharge_cfs) %>%
-    mutate(output_wse = zoo::na.approx(water_surface_elevation)) %>%
-    filter(selected_water_level) %>% 
-    pull(output_wse)
-}
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -320,8 +242,18 @@ streamstats_result <- tribble(~return_interval, ~discharge,
                               100, 3980 ) 
 
 velocities <- streamstats_result %>%
-  mutate(xs_area_2007 = map_dbl(discharge, function(discharge) {depth_vs_discharge_2007 %>% interpolate_rating_curve(., discharge) %>% calc_xs(xs_2007, .) %>% .$cross_sectional_area}),
-         xs_area_2023 = map_dbl(discharge, function(discharge) {depth_vs_discharge_2023 %>% interpolate_rating_curve(., discharge) %>% calc_xs(xs_2023, .) %>% .$cross_sectional_area}),
+  mutate(xs_area_2007 = map_dbl(discharge, function(discharge) {
+            depth_vs_discharge_2007 %>% 
+            interpolate_rating_curve(., discharge) %>%
+            calc_xs(xs_2007, .) %>% 
+            .$cross_sectional_area
+            }),
+         xs_area_2023 = map_dbl(discharge, function(discharge) {
+            depth_vs_discharge_2023 %>% 
+            interpolate_rating_curve(., discharge) %>% 
+            calc_xs(xs_2023, .) %>% 
+            .$cross_sectional_area
+            }),
          velocity_2007 = discharge / xs_area_2007,
          velocity_2023 = discharge / xs_area_2023
          )
