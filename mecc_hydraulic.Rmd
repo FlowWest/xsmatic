@@ -261,4 +261,11 @@ velocities %>% knitr::kable()
 ```
 
 
-
+```{r message=FALSE, warning=FALSE}
+all_parms_2023 <- streamstats_result %>%
+  mutate(xs_parms_2023 = map(discharge, function(discharge) {
+            depth_vs_discharge_2023 %>% 
+            interpolate_rating_curve(., discharge) %>% 
+            calc_xs(xs_2023, .)})) |> unnest_wider(xs_parms_2023)
+all_parms_2023 %>% knitr::kable()
+```
