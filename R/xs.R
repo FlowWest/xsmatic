@@ -69,13 +69,13 @@ xs_calc_geom <- function(xs, water_surface_elevation) {
 xs_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
   rating_curve <- seq(from=min(xs$gse)+delta_z, to=max(xs$gse), by=delta_z) %>% 
     as_tibble() %>%
-    mutate(result = map(value, function(x){xs_calc_geom(data = xs, water_elev = x)})) %>% 
+    mutate(result = map(value, function(wse){xs_calc_geom(xs, wse)})) %>% 
     unnest_wider(col = result) %>%
     drop_na() %>%
-    mutate(discharge_cfs = 1.486 * cross_sectional_area * 
+    mutate(discharge = 1.486 * cross_sectional_area * 
              (cross_sectional_area / wetted_perimeter)^(2/3) * slope^(1/2) * mannings_n^(-1),
-           velocity_ft_s = discharge_cfs / cross_sectional_area) %>%
-    arrange(discharge_cfs)
+           velocity = discharge / cross_sectional_area) %>%
+    arrange(discharge)
 }
 
 #' This function takes a rating curve calculated by xs_rating_curve and returns the water surface elevation for a given discharge. 
@@ -83,10 +83,10 @@ xs_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
 #' @param discharge A discharge (cfs) number at which to determine the water surface elevation
 xs_rc_interpolate <- function(rc, discharge) {
   rc %>%
-    bind_rows(tribble(~selected_water_level, ~discharge_cfs, TRUE, discharge)) %>%
-    arrange(discharge_cfs) %>%
+    bind_rows(tribble(~selected_wse, ~discharge, TRUE, discharge)) %>%
+    arrange(discharge) %>%
     mutate(output_wse = zoo::na.approx(water_surface_elevation)) %>%
-    filter(selected_water_level) %>% 
+    filter(selected_wse) %>% 
     pull(output_wse)
 }
 

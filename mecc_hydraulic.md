@@ -13,7 +13,7 @@ source("R/xs.R")
 
 ``` r
 xs_2007 <- read_csv("data/xs_2007.csv") %>%
-  prep_xs(sta = station_ft, elev = elevation_ft) 
+  xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
   ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
@@ -23,7 +23,7 @@ xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() +
 
 ``` r
 xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
-  prep_xs(sta = station_ft, elev = elevation_ft) 
+  xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
   ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
@@ -58,10 +58,10 @@ for each scenario.*
 
 ``` r
 depth_vs_discharge_2007 <- xs_2007 %>% 
-  calculate_rating_curve(slope = model_slope,
+  xs_rating_curve(slope = model_slope,
                          mannings_n = model_roughness) # 0.030) #model_roughness)
 depth_vs_discharge_2007 %>% 
-  ggplot(aes(y = max_depth, x = discharge_cfs)) + 
+  ggplot(aes(y = max_depth, x = discharge)) + 
   geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2007 Baseline")
 ```
 
@@ -69,10 +69,10 @@ depth_vs_discharge_2007 %>%
 
 ``` r
 depth_vs_discharge_2023 <- xs_2023 %>% 
-  calculate_rating_curve(slope = model_slope,
+  xs_rating_curve(slope = model_slope,
                          mannings_n = model_roughness)
 depth_vs_discharge_2023 %>% 
-  ggplot(aes(y = max_depth, x = discharge_cfs)) + 
+  ggplot(aes(y = max_depth, x = discharge)) + 
   geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2023 Proposed") 
 ```
 
@@ -80,8 +80,8 @@ depth_vs_discharge_2023 %>%
 
 ``` r
 ggplot() +
-  geom_line(data = depth_vs_discharge_2007, aes(y = max_depth, x = discharge_cfs, color = "2007 Baseline")) +
-  geom_line(data = depth_vs_discharge_2023, aes(y = max_depth, x = discharge_cfs, color = "2023 Proposed")) + 
+  geom_line(data = depth_vs_discharge_2007, aes(y = max_depth, x = discharge, color = "2007 Baseline")) +
+  geom_line(data = depth_vs_discharge_2023, aes(y = max_depth, x = discharge, color = "2023 Proposed")) + 
   ylab("Depth (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
@@ -89,8 +89,8 @@ ggplot() +
 
 ``` r
 ggplot() +
-  geom_line(data = depth_vs_discharge_2007, aes(y = water_surface_elevation, x = discharge_cfs, color = "2007 Baseline")) +
-  geom_line(data = depth_vs_discharge_2023, aes(y = water_surface_elevation, x = discharge_cfs, color = "2023 Proposed")) + 
+  geom_line(data = depth_vs_discharge_2007, aes(y = water_surface_elevation, x = discharge, color = "2007 Baseline")) +
+  geom_line(data = depth_vs_discharge_2023, aes(y = water_surface_elevation, x = discharge, color = "2023 Proposed")) + 
   ylab("Water Surface Elevation (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
@@ -108,7 +108,7 @@ model_discharge <- 3980 # cfs
 ```
 
 ``` r
-wse_2007 <- depth_vs_discharge_2007 %>% interpolate_rating_curve(model_discharge)
+wse_2007 <- depth_vs_discharge_2007 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2007" = wse_2007))
 ```
 
@@ -116,7 +116,7 @@ print(c("wse 2007" = wse_2007))
     ##    47.84
 
 ``` r
-wse_2023 <- depth_vs_discharge_2023 %>% interpolate_rating_curve(model_discharge)
+wse_2023 <- depth_vs_discharge_2023 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2023" = wse_2023))
 ```
 
@@ -124,7 +124,7 @@ print(c("wse 2023" = wse_2023))
     ##    47.64
 
 ``` r
-xs_2007 %>% calc_xs(wse_2007)
+xs_2007 %>% xs_calc_geom(wse_2007)
 ```
 
     ## $thalweg_elevation
@@ -143,7 +143,7 @@ xs_2007 %>% calc_xs(wse_2007)
     ## [1] 40.73901
 
 ``` r
-xs_2023 %>% calc_xs(wse_2023)
+xs_2023 %>% xs_calc_geom(wse_2023)
 ```
 
     ## $thalweg_elevation
@@ -201,14 +201,14 @@ ggplot() +
 ### Calculate design velocity based on Q100 flow
 
 ``` r
-velocity_2007 <- model_discharge / calc_xs(xs_2007, wse_2007)$cross_sectional_area
+velocity_2007 <- model_discharge / xs_calc_geom(xs_2007, wse_2007)$cross_sectional_area
 print(velocity_2007)
 ```
 
     ## [1] 18.57715
 
 ``` r
-velocity_2023 <- model_discharge / calc_xs(xs_2023, wse_2023)$cross_sectional_area
+velocity_2023 <- model_discharge / xs_calc_geom(xs_2023, wse_2023)$cross_sectional_area
 print(velocity_2023)
 ```
 
@@ -223,7 +223,7 @@ model_discharge <- 513 # cfs
 ```
 
 ``` r
-wse_2007_Q2 <- depth_vs_discharge_2007 %>% interpolate_rating_curve(model_discharge)
+wse_2007_Q2 <- depth_vs_discharge_2007 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2007" = wse_2007_Q2))
 ```
 
@@ -231,7 +231,7 @@ print(c("wse 2007" = wse_2007_Q2))
     ##    40.54
 
 ``` r
-wse_2023_Q2 <- depth_vs_discharge_2023 %>% interpolate_rating_curve(model_discharge)
+wse_2023_Q2 <- depth_vs_discharge_2023 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2023" = wse_2023_Q2))
 ```
 
@@ -239,7 +239,7 @@ print(c("wse 2023" = wse_2023_Q2))
     ##    41.24
 
 ``` r
-xs_2007 %>% calc_xs(wse_2007_Q2)
+xs_2007 %>% xs_calc_geom(wse_2007_Q2)
 ```
 
     ## $thalweg_elevation
@@ -258,7 +258,7 @@ xs_2007 %>% calc_xs(wse_2007_Q2)
     ## [1] 22.13284
 
 ``` r
-xs_2023 %>% calc_xs(wse_2023_Q2)
+xs_2023 %>% xs_calc_geom(wse_2023_Q2)
 ```
 
     ## $thalweg_elevation
@@ -316,14 +316,14 @@ ggplot() +
 ### Calculate design velocity based on Q2 flow
 
 ``` r
-velocity_2007_Q2 <- model_discharge / calc_xs(xs_2007, wse_2007_Q2)$cross_sectional_area
+velocity_2007_Q2 <- model_discharge / xs_calc_geom(xs_2007, wse_2007_Q2)$cross_sectional_area
 print(velocity_2007_Q2)
 ```
 
     ## [1] 10.60255
 
 ``` r
-velocity_2023_Q2 <- model_discharge / calc_xs(xs_2023, wse_2023_Q2)$cross_sectional_area
+velocity_2023_Q2 <- model_discharge / xs_calc_geom(xs_2023, wse_2023_Q2)$cross_sectional_area
 print(velocity_2023_Q2)
 ```
 
@@ -346,14 +346,14 @@ streamstats_result <- tribble(~return_interval, ~discharge,
 velocities <- streamstats_result %>%
   mutate(xs_area_2007 = map_dbl(discharge, function(discharge) {
             depth_vs_discharge_2007 %>% 
-            interpolate_rating_curve(., discharge) %>%
-            calc_xs(xs_2007, .) %>% 
+            xs_rc_interpolate(., discharge) %>%
+            xs_calc_geom(xs_2007, .) %>% 
             .$cross_sectional_area
             }),
          xs_area_2023 = map_dbl(discharge, function(discharge) {
             depth_vs_discharge_2023 %>% 
-            interpolate_rating_curve(., discharge) %>% 
-            calc_xs(xs_2023, .) %>% 
+            xs_rc_interpolate(., discharge) %>% 
+            xs_calc_geom(xs_2023, .) %>% 
             .$cross_sectional_area
             }),
          velocity_2007 = discharge / xs_area_2007,
@@ -371,20 +371,18 @@ velocities %>% knitr::kable()
 |              50 |      3360 |    185.94605 |    189.26527 |      18.06976 |      17.75286 |
 |             100 |      3980 |    214.24166 |    214.05067 |      18.57715 |      18.59373 |
 
+Stable version using function:
+
 ``` r
-all_parms_2023 <- streamstats_result %>%
-  mutate(xs_parms_2023 = map(discharge, function(discharge) {
-            depth_vs_discharge_2023 %>% 
-            interpolate_rating_curve(., discharge) %>% 
-            calc_xs(xs_2023, .)})) |> unnest_wider(xs_parms_2023)
+all_parms_2023 <- xs_eval_all(xs = xs_2023, rc = depth_vs_discharge_2023, discharges = streamstats_result)
 all_parms_2023 %>% knitr::kable()
 ```
 
-| return_interval | discharge | thalweg_elevation | water_surface_elevation | max_depth | cross_sectional_area | wetted_perimeter |
-|----------------:|----------:|------------------:|------------------------:|----------:|---------------------:|-----------------:|
-|               2 |       513 |             36.99 |                   41.24 |      4.25 |             47.22972 |         20.87879 |
-|               5 |      1320 |             36.99 |                   43.44 |      6.45 |             95.12741 |         28.59194 |
-|              10 |      1970 |             36.99 |                   44.74 |      7.75 |            128.97752 |         32.37290 |
-|              25 |      2780 |             36.99 |                   46.04 |      9.05 |            165.48131 |         36.03294 |
-|              50 |      3360 |             36.99 |                   46.84 |      9.85 |            189.26527 |         38.38498 |
-|             100 |      3980 |             36.99 |                   47.64 |     10.65 |            214.05067 |         40.61888 |
+| return_interval | discharge | thalweg_elevation | water_surface_elevation | max_depth | cross_sectional_area | wetted_perimeter | velocity |
+|----------------:|----------:|------------------:|------------------------:|----------:|---------------------:|-----------------:|---------:|
+|               2 |       513 |             36.99 |                   41.24 |      4.25 |             47.22972 |         20.87879 | 10.86181 |
+|               5 |      1320 |             36.99 |                   43.44 |      6.45 |             95.12741 |         28.59194 | 13.87613 |
+|              10 |      1970 |             36.99 |                   44.74 |      7.75 |            128.97752 |         32.37290 | 15.27398 |
+|              25 |      2780 |             36.99 |                   46.04 |      9.05 |            165.48131 |         36.03294 | 16.79948 |
+|              50 |      3360 |             36.99 |                   46.84 |      9.85 |            189.26527 |         38.38498 | 17.75286 |
+|             100 |      3980 |             36.99 |                   47.64 |     10.65 |            214.05067 |         40.61888 | 18.59373 |

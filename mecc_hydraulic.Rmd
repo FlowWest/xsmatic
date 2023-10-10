@@ -56,7 +56,7 @@ depth_vs_discharge_2007 <- xs_2007 %>%
   xs_rating_curve(slope = model_slope,
                          mannings_n = model_roughness) # 0.030) #model_roughness)
 depth_vs_discharge_2007 %>% 
-  ggplot(aes(y = max_depth, x = discharge_cfs)) + 
+  ggplot(aes(y = max_depth, x = discharge)) + 
   geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2007 Baseline")
 ```
 
@@ -65,20 +65,20 @@ depth_vs_discharge_2023 <- xs_2023 %>%
   xs_rating_curve(slope = model_slope,
                          mannings_n = model_roughness)
 depth_vs_discharge_2023 %>% 
-  ggplot(aes(y = max_depth, x = discharge_cfs)) + 
+  ggplot(aes(y = max_depth, x = discharge)) + 
   geom_line() + ylab("Depth (ft)") + xlab("Discharge (cfs)") + ggtitle("2023 Proposed") 
 ```
 
 ```{r message=FALSE, warning=FALSE}
 ggplot() +
-  geom_line(data = depth_vs_discharge_2007, aes(y = max_depth, x = discharge_cfs, color = "2007 Baseline")) +
-  geom_line(data = depth_vs_discharge_2023, aes(y = max_depth, x = discharge_cfs, color = "2023 Proposed")) + 
+  geom_line(data = depth_vs_discharge_2007, aes(y = max_depth, x = discharge, color = "2007 Baseline")) +
+  geom_line(data = depth_vs_discharge_2023, aes(y = max_depth, x = discharge, color = "2023 Proposed")) + 
   ylab("Depth (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
 ```
 ```{r message=FALSE, warning=FALSE}
 ggplot() +
-  geom_line(data = depth_vs_discharge_2007, aes(y = water_surface_elevation, x = discharge_cfs, color = "2007 Baseline")) +
-  geom_line(data = depth_vs_discharge_2023, aes(y = water_surface_elevation, x = discharge_cfs, color = "2023 Proposed")) + 
+  geom_line(data = depth_vs_discharge_2007, aes(y = water_surface_elevation, x = discharge, color = "2007 Baseline")) +
+  geom_line(data = depth_vs_discharge_2023, aes(y = water_surface_elevation, x = discharge, color = "2023 Proposed")) + 
   ylab("Water Surface Elevation (ft)") + xlab("Discharge (cfs)") + theme(legend.position="top", legend.title=element_blank())
 ```
 
@@ -260,17 +260,9 @@ velocities <- streamstats_result %>%
 velocities %>% knitr::kable()
 ```
 
+Stable version using function:
 
 ```{r message=FALSE, warning=FALSE}
-all_parms_2023 <- streamstats_result %>%
-  mutate(xs_parms_2023 = map(discharge, function(discharge) {
-            depth_vs_discharge_2023 %>% 
-            xs_rc_interpolate(., discharge) %>% 
-            xs_calc_geom(xs_2023, .)})) |> unnest_wider(xs_parms_2023)
-all_parms_2023 %>% knitr::kable()
-```
-
-```{r message=FALSE, warning=FALSE}
-all_parms_2023 <- xs_eval_all(xs = xs_2023, rc = depth_vs_discharge_2023, discharges = 2500)
+all_parms_2023 <- xs_eval_all(xs = xs_2023, rc = depth_vs_discharge_2023, discharges = streamstats_result)
 all_parms_2023 %>% knitr::kable()
 ```
