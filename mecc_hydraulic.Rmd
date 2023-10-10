@@ -269,3 +269,8 @@ all_parms_2023 <- streamstats_result %>%
             calc_xs(xs_2023, .)})) |> unnest_wider(xs_parms_2023)
 all_parms_2023 %>% knitr::kable()
 ```
+
+```{r message=FALSE, warning=FALSE}
+all_parms_2023 <- xs_eval_all(xs = xs_2023, rc = depth_vs_discharge_2023, discharges = 2500)
+all_parms_2023 %>% knitr::kable()
+```
