@@ -6,7 +6,7 @@ library(tidyverse)
 #' @param sta The name of the station variable in the source data
 #' @param elev The name of the elevation variable in the source data 
 #' @param delta_x The x interval width to be used for densification. Narrower intervals will produce better results. Defaults to 0.1 ft.
-prep_xs <- function(data, sta, elev, delta_x=0.1) {
+xs_prep <- function(data, sta, elev, delta_x=0.1) {
   
   # densify along the horizontal axis
   result <- data %>%
@@ -37,14 +37,14 @@ prep_xs <- function(data, sta, elev, delta_x=0.1) {
   
 }
 
-#' Input a cross section data frame as returned by the prep_xs function.
+#' Input a cross section data frame as returned by the xs_prep function.
 #' Outputs a named vector of hydraulic parameters (such as cross-sectional area and wetted perimeter) at the specified water surface elevation.
-#' @param xs A tbl_df containing cross section geometry, as returned by the prep_xs function
+#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
 #' @param water_elev The water surface elevation at which the 
-calc_xs <- function(xs, water_elev) {
+xs_calc_geom <- function(xs, water_surface_elevation) {
   xs %>% 
     arrange(sta) %>%
-    mutate(wse = case_when(water_elev > gse ~ water_elev),
+    mutate(wse = case_when(water_surface_elevation > gse ~ water_surface_elevation),
            delta_x = abs(lag(sta, 1) - sta),
            delta_z = abs(lag(gse, 1) - gse),
            depth = wse - gse, 
@@ -52,7 +52,7 @@ calc_xs <- function(xs, water_elev) {
     ) %>%
     filter(!is.na(wse)) %>% 
     summarize(thalweg_elevation = min(gse),
-              water_surface_elevation = water_elev,
+              water_surface_elevation = water_surface_elevation,
               max_depth = water_surface_elevation - thalweg_elevation,
               cross_sectional_area = sum(delta_x * depth),
               wetted_perimeter = sum(hyp_length)
@@ -61,15 +61,15 @@ calc_xs <- function(xs, water_elev) {
     list_flatten()
 }
 
-#' This function runs the calc_xs function along a series of water surface elevations to return a rating curve of water surface elevation versus cross-sectional area and wetted perimeter. Then it applies Manning's equation to estimate depth and velocity. Returns a tbl_df with one row per water surface elevation.
-#' @param xs A tbl_df containing cross section geometry, as returned by the prep_xs function
+#' This function runs the xs_calc_geom function along a series of water surface elevations to return a rating curve of water surface elevation versus cross-sectional area and wetted perimeter. Then it applies Manning's equation to estimate depth and velocity. Returns a tbl_df with one row per water surface elevation.
+#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
 #' @param slope The channel profile slope at the cross section, used in Manning's equation.
 #' @param mannings_n The roughness coefficient for the cross section, used in Manning's equation.
 #' @param delta_z The elevation interval to be used for calculating outputs at different water surface elevations. Defaults to 0.1 ft.
-calculate_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
+xs_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
   rating_curve <- seq(from=min(xs$gse)+delta_z, to=max(xs$gse), by=delta_z) %>% 
     as_tibble() %>%
-    mutate(result = map(value, function(x){calc_xs(data = xs, water_elev = x)})) %>% 
+    mutate(result = map(value, function(x){xs_calc_geom(data = xs, water_elev = x)})) %>% 
     unnest_wider(col = result) %>%
     drop_na() %>%
     mutate(discharge_cfs = 1.486 * cross_sectional_area * 
@@ -78,10 +78,10 @@ calculate_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
     arrange(discharge_cfs)
 }
 
-#' This function takes a rating curve calculated by calculate_rating_curve and returns the water surface elevation for a given discharge. 
-#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the calculate_rating_curve function
+#' This function takes a rating curve calculated by xs_rating_curve and returns the water surface elevation for a given discharge. 
+#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the xs_rating_curve function
 #' @param discharge A discharge (cfs) number at which to determine the water surface elevation
-interpolate_rating_curve <- function(rc, discharge) {
+xs_rc_interpolate <- function(rc, discharge) {
   rc %>%
     bind_rows(tribble(~selected_water_level, ~discharge_cfs, TRUE, discharge)) %>%
     arrange(discharge_cfs) %>%
@@ -90,9 +90,9 @@ interpolate_rating_curve <- function(rc, discharge) {
     pull(output_wse)
 }
 
-#' This function takes a rating curve calculated by calculate_rating_curve and returns hydraulic parameters for multiple given discharges 
-#' @param xs A tbl_df containing cross section geometry, as returned by the prep_xs function
-#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the calculate_rating_curve function
+#' This function takes a cross section data frame as returned by the xs_prep function, and a rating curve calculated by xs_rating_curve. It returns hydraulic parameters for one or more given discharges.
+#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
+#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the xs_rating_curve function
 #' @param discharges A discharge (cfs) number at which to determine the water surface elevation, or a vector of multiple discharges. Vector can be named or unnamed. Also accepts a data frame or tibble containing a column called "discharge"
 xs_eval_all <- function(xs, rc, discharges) {
   if (!("data.frame" %in% class(discharges))){
@@ -101,8 +101,8 @@ xs_eval_all <- function(xs, rc, discharges) {
   discharges %>%
     mutate(xs_parameters = map(discharge, function(discharge) {
         rc %>% 
-        interpolate_rating_curve(., discharge) %>% 
-        calc_xs(xs, .)})) %>% 
+        xs_rc_interpolate(., discharge) %>% 
+        xs_calc_geom(xs, .)})) %>% 
     unnest_wider(xs_parameters) %>%
     mutate(velocity = discharge / cross_sectional_area)
 }

@@ -17,7 +17,7 @@ source("R/xs.R")
 
 ```{r message=FALSE, warning=FALSE}
 xs_2007 <- read_csv("data/xs_2007.csv") %>%
-  prep_xs(sta = station_ft, elev = elevation_ft) 
+  xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
   ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2007 Baseline") + coord_fixed(ratio = 1)
@@ -25,7 +25,7 @@ xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() +
 
 ```{r message=FALSE, warning=FALSE}
 xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
-  prep_xs(sta = station_ft, elev = elevation_ft) 
+  xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
   ylab("Elevation (ft)") + xlab("Station (ft)") + ggtitle("2023 Proposed") + coord_fixed(ratio = 1)
@@ -53,7 +53,7 @@ print(c("model_slope" = model_slope, "model_roughness" = model_roughness))
 
 ```{r message=FALSE }
 depth_vs_discharge_2007 <- xs_2007 %>% 
-  calculate_rating_curve(slope = model_slope,
+  xs_rating_curve(slope = model_slope,
                          mannings_n = model_roughness) # 0.030) #model_roughness)
 depth_vs_discharge_2007 %>% 
   ggplot(aes(y = max_depth, x = discharge_cfs)) + 
@@ -62,7 +62,7 @@ depth_vs_discharge_2007 %>%
 
 ```{r message=FALSE, warning=FALSE}
 depth_vs_discharge_2023 <- xs_2023 %>% 
-  calculate_rating_curve(slope = model_slope,
+  xs_rating_curve(slope = model_slope,
                          mannings_n = model_roughness)
 depth_vs_discharge_2023 %>% 
   ggplot(aes(y = max_depth, x = discharge_cfs)) + 
@@ -93,21 +93,21 @@ model_discharge <- 3980 # cfs
 ```
 
 ```{r message=FALSE, warning=FALSE}
-wse_2007 <- depth_vs_discharge_2007 %>% interpolate_rating_curve(model_discharge)
+wse_2007 <- depth_vs_discharge_2007 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2007" = wse_2007))
 ```
 
 ```{r message=FALSE, warning=FALSE}
-wse_2023 <- depth_vs_discharge_2023 %>% interpolate_rating_curve(model_discharge)
+wse_2023 <- depth_vs_discharge_2023 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2023" = wse_2023))
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2007 %>% calc_xs(wse_2007)
+xs_2007 %>% xs_calc_geom(wse_2007)
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2023 %>% calc_xs(wse_2023)
+xs_2023 %>% xs_calc_geom(wse_2023)
 ```
 
 ### Plot outputs
@@ -144,14 +144,14 @@ ggplot() +
 
 ```{r message=FALSE, warning=FALSE}
 
-velocity_2007 <- model_discharge / calc_xs(xs_2007, wse_2007)$cross_sectional_area
+velocity_2007 <- model_discharge / xs_calc_geom(xs_2007, wse_2007)$cross_sectional_area
 print(velocity_2007)
 
 ```
 
 ```{r message=FALSE, warning=FALSE}
 
-velocity_2023 <- model_discharge / calc_xs(xs_2023, wse_2023)$cross_sectional_area
+velocity_2023 <- model_discharge / xs_calc_geom(xs_2023, wse_2023)$cross_sectional_area
 print(velocity_2023)
 
 ```
@@ -165,21 +165,21 @@ model_discharge <- 513 # cfs
 ```
 
 ```{r message=FALSE, warning=FALSE}
-wse_2007_Q2 <- depth_vs_discharge_2007 %>% interpolate_rating_curve(model_discharge)
+wse_2007_Q2 <- depth_vs_discharge_2007 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2007" = wse_2007_Q2))
 ```
 
 ```{r message=FALSE, warning=FALSE}
-wse_2023_Q2 <- depth_vs_discharge_2023 %>% interpolate_rating_curve(model_discharge)
+wse_2023_Q2 <- depth_vs_discharge_2023 %>% xs_rc_interpolate(model_discharge)
 print(c("wse 2023" = wse_2023_Q2))
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2007 %>% calc_xs(wse_2007_Q2)
+xs_2007 %>% xs_calc_geom(wse_2007_Q2)
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2023 %>% calc_xs(wse_2023_Q2)
+xs_2023 %>% xs_calc_geom(wse_2023_Q2)
 ```
 
 ### Plot outputs
@@ -216,14 +216,14 @@ ggplot() +
 
 ```{r message=FALSE, warning=FALSE}
 
-velocity_2007_Q2 <- model_discharge / calc_xs(xs_2007, wse_2007_Q2)$cross_sectional_area
+velocity_2007_Q2 <- model_discharge / xs_calc_geom(xs_2007, wse_2007_Q2)$cross_sectional_area
 print(velocity_2007_Q2)
 
 ```
 
 ```{r message=FALSE, warning=FALSE}
 
-velocity_2023_Q2 <- model_discharge / calc_xs(xs_2023, wse_2023_Q2)$cross_sectional_area
+velocity_2023_Q2 <- model_discharge / xs_calc_geom(xs_2023, wse_2023_Q2)$cross_sectional_area
 print(velocity_2023_Q2)
 
 ```
@@ -244,14 +244,14 @@ streamstats_result <- tribble(~return_interval, ~discharge,
 velocities <- streamstats_result %>%
   mutate(xs_area_2007 = map_dbl(discharge, function(discharge) {
             depth_vs_discharge_2007 %>% 
-            interpolate_rating_curve(., discharge) %>%
-            calc_xs(xs_2007, .) %>% 
+            xs_rc_interpolate(., discharge) %>%
+            xs_calc_geom(xs_2007, .) %>% 
             .$cross_sectional_area
             }),
          xs_area_2023 = map_dbl(discharge, function(discharge) {
             depth_vs_discharge_2023 %>% 
-            interpolate_rating_curve(., discharge) %>% 
-            calc_xs(xs_2023, .) %>% 
+            xs_rc_interpolate(., discharge) %>% 
+            xs_calc_geom(xs_2023, .) %>% 
             .$cross_sectional_area
             }),
          velocity_2007 = discharge / xs_area_2007,
@@ -265,8 +265,8 @@ velocities %>% knitr::kable()
 all_parms_2023 <- streamstats_result %>%
   mutate(xs_parms_2023 = map(discharge, function(discharge) {
             depth_vs_discharge_2023 %>% 
-            interpolate_rating_curve(., discharge) %>% 
-            calc_xs(xs_2023, .)})) |> unnest_wider(xs_parms_2023)
+            xs_rc_interpolate(., discharge) %>% 
+            xs_calc_geom(xs_2023, .)})) |> unnest_wider(xs_parms_2023)
 all_parms_2023 %>% knitr::kable()
 ```
 
