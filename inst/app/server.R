@@ -14,7 +14,7 @@ function(input, output, session) {
 
   df_qs <- reactiveValues(discharges = { 
     data.frame(name = character(0), discharge = numeric(0)) %>% 
-      add_row(name = c("2","5","10","25","50","100"), discharge = c(50,100,200,500,1000,2000))
+      add_row(name = c("Q2","Q5","Q10","Q25","Q50","Q100"), discharge = c(50,100,200,500,1000,2000))
   })
 
   output$dt_xs1 <- renderDT({
@@ -38,7 +38,7 @@ function(input, output, session) {
                   editable = TRUE, 
                   colnames=c("Profile Name", "Discharge (cfs)"), 
                   options = list(dom = 't'), 
-                  caption="Discharges for Tabular Output")
+                  caption="Enter Discharges for Tabular Output")
   })
   
   #observeEvent(input$dt_xs1_cell_edit, {
@@ -94,15 +94,26 @@ function(input, output, session) {
     }
   })
   
+  column_name_list <- c("Profile Name",
+                        "Discharge (cfs)",
+                        "Thalweg Elev (ft)", 
+                        "WS Elev (ft)", 
+                        "Max Depth (ft)",
+                        "XS Area (ft)", 
+                        "Wet Perim (ft)", 
+                        "Velocity (ft/s)")
+  
   output$eval_result1 <- renderDT({
     if(input$enable1) {
-      DT::datatable(res1(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 1")
+      DT::datatable(res1(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 1", colnames = column_name_list) %>% 
+        DT::formatRound(columns=c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity"), digits=2)
     }
   })
   
   output$eval_result2 <- renderDT({
     if(input$enable2) {
-      DT::datatable(res2(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 2")
+      DT::datatable(res2(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 2", colnames = column_name_list) %>% 
+        DT::formatRound(columns=c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity"), digits=2)
     }
   })
   
