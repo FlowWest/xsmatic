@@ -13,7 +13,7 @@ xs_prep <- function(data, sta, elev, delta_x=0.1) {
     arrange({{sta}}) %>%
     mutate(sta = {{sta}}) %>%
     complete(sta = seq(from = min({{sta}}), to = max({{sta}}), by = delta_x)) %>%
-    mutate(gse = zoo::na.approx({{elev}}, x = sta)) %>% 
+    mutate(gse = zoo::na.approx({{elev}}, x = sta)) %>%  #, na.rm = FALSE
     select(c(sta, gse))
   
   # densify along the vertical axis
@@ -105,4 +105,49 @@ xs_eval_all <- function(xs, rc, discharges) {
         xs_calc_geom(xs, .)})) %>% 
     unnest_wider(xs_parameters) %>%
     mutate(velocity = discharge / cross_sectional_area)
+}
+
+#' This function takes a cross section data frame as returned by the xs_prep function, and plots it with 1:1 scale. Optionally also adds a given water surface line.
+#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
+#' @param wse A water surface elevation, as returned by the xs_rc_interpolate function
+xs_plot <- function(xs, wse = NA) {
+  plt <- ggplot(data = xs) + geom_line(aes(x = sta, y = gse, linetype = "Terrain"))
+  if (!is.na(wse)) {
+    plt <- plt +  geom_line(aes(x = sta, y = case_when(wse > gse ~ wse), linetype = "Water Surface"))
+  }
+  return(plt + xlab("Station (ft)") + ylab("Elevation (ft)") + theme_classic() + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1) 
+  )
+}
+
+#' This function takes a cross section data frame as returned by the xs_prep function, and plots it with 1:1 scale. Optionally also adds a given water surface line.
+#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param y The unquoted name of a rating curve variable to plot on the y axis. Defaults to max_depth.
+#' @param x The unquoted name of a rating curve variable to plot on the x axis. Defaults to discharge.
+#' @param ylab If a custom y axis variable is selected, provide a text label for the y axis.
+#' @param ylab If a custom x axis variable is selected, provide a text label for the x axis.
+xs_plot_rc <- function(rc, y = water_surface_elevation, x = discharge, ylab="Water Surface Elevation (ft)", xlab="Discharge (cfs)") {
+  plt <- ggplot(data = rc) + geom_line(aes(y = {{y}}, x = {{x}}))
+  return(plt + ylab(ylab) + xlab(xlab) + theme_classic())
+}
+
+xs_plot2 <- function(xs1, xs2, wse1 = NA, wse2 = NA, label1 = "Baseline", label2 = "Design") {
+  plt <- ggplot() + 
+    geom_line(data = xs1, aes(x = sta, y = gse, color = label1, linetype = "Terrain")) + 
+    geom_line(data = xs2, aes(x = sta, y = gse, color = label2, linetype = "Terrain"))
+  if (!is.na(wse1)) {
+    plt <- plt +  geom_line(data = xs1, aes(x = sta, y = case_when(wse1 > gse ~ wse1), color = label1, linetype = "Water Surface"))
+  }
+  if (!is.na(wse2)) {
+    plt <- plt +  geom_line(data = xs2, aes(x = sta, y = case_when(wse2 > gse ~ wse2), color = label2, linetype = "Water Surface"))
+  }
+  return(plt + xlab("Station (ft)") + ylab("Elevation (ft)") + theme_classic() + theme(legend.position="top", legend.title=element_blank()) + coord_fixed(ratio = 1) 
+  )
+}
+
+xs_plot_rc2 <- function(rc1, rc2, label1 = "Baseline", label2 = "Design") {
+  plt <- ggplot() + 
+    geom_line(data = rc1, aes(y = water_surface_elevation, x = discharge, color = label1)) +
+    geom_line(data = rc2, aes(y = water_surface_elevation, x = discharge, color = label2)) + 
+    ylab("Water Surface Elevation (ft)") + xlab("Discharge (cfs)") + theme_classic() + theme(legend.position="top", legend.title=element_blank())
+  return(plt)
 }

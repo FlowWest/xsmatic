@@ -266,3 +266,22 @@ Stable version using function:
 all_parms_2023 <- xs_eval_all(xs = xs_2023, rc = depth_vs_discharge_2023, discharges = streamstats_result)
 all_parms_2023 %>% knitr::kable()
 ```
+
+## plotting functions
+
+```{r message=FALSE, warning=FALSE}
+xs_2007 %>% xs_plot(wse = wse_2007)
+```
+
+```{r message=FALSE, warning=FALSE}
+depth_vs_discharge_2007 %>% xs_plot_rc()
+```
+
+
+```{r message=FALSE, warning=FALSE}
+xs_plot2(xs_2007, xs_2023, wse_2007, wse_2023)
+```
+
+```{r message=FALSE, warning=FALSE}
+xs_plot_rc2(depth_vs_discharge_2007, depth_vs_discharge_2023)
+```

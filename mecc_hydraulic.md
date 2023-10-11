@@ -386,3 +386,17 @@ all_parms_2023 %>% knitr::kable()
 |              25 |      2780 |             36.99 |                   46.04 |      9.05 |            165.48131 |         36.03294 | 16.79948 |
 |              50 |      3360 |             36.99 |                   46.84 |      9.85 |            189.26527 |         38.38498 | 17.75286 |
 |             100 |      3980 |             36.99 |                   47.64 |     10.65 |            214.05067 |         40.61888 | 18.59373 |
+
+## plotting functions
+
+``` r
+xs_2007 %>% xs_plot(wse = wse_2007)
+```
+
+![](mecc_hydraulic_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+
+``` r
+depth_vs_discharge_2007 %>% xs_plot_rc()
+```
+
+![](mecc_hydraulic_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
