@@ -12,37 +12,57 @@ function(input, output, session) {
     read_csv(input$file_xs2$datapath) %>% select(c(1,2)) %>% rename(station_ft = 1, elevation_ft = 2)
     })
 
-  df_qs <- reactive({ 
+  df_qs <- reactiveValues(discharges = { 
     data.frame(name = character(0), discharge = numeric(0)) %>% 
       add_row(name = c("2","5","10","25","50","100"), discharge = c(50,100,200,500,1000,2000))
   })
 
   output$dt_xs1 <- renderDT({
-    DT::datatable(df_xs1(), editable = TRUE, colnames=c("Station (ft)", "Elevation (ft)"), options = list(dom = 'tp'), caption="Cross Section 1 Input")
+    DT::datatable(df_xs1(), 
+                  editable = FALSE, 
+                  colnames=c("Station (ft)", "Elevation (ft)"), 
+                  options = list(dom = 'tp'), 
+                  caption="Cross Section 1 Input")
   })
   
   output$dt_xs2 <- renderDT({
-    DT::datatable(df_xs2(), editable = TRUE, colnames=c("Station (ft)", "Elevation (ft)"), options = list(dom = 'tp'), caption="Cross Section 2 Input")
+    DT::datatable(df_xs2(), 
+                  editable = FALSE, 
+                  colnames=c("Station (ft)", "Elevation (ft)"), 
+                  options = list(dom = 'tp'), 
+                  caption="Cross Section 2 Input")
   })
   
   output$dt_qs <- renderDT({
-    DT::datatable(df_qs(), editable = TRUE, colnames=c("Profile Name", "Discharge (cfs)"), options = list(dom = 't'), caption="Discharges for Tabular Output")
+    DT::datatable(df_qs$discharges, 
+                  editable = TRUE, 
+                  colnames=c("Profile Name", "Discharge (cfs)"), 
+                  options = list(dom = 't'), 
+                  caption="Discharges for Tabular Output")
   })
   
-  observeEvent(input$dt_xs1_cell_edit, {
-    info = input$dt_xs1_cell_edit
+  #observeEvent(input$dt_xs1_cell_edit, {
+  #  info = input$dt_xs1_cell_edit
+  #  i = as.numeric(info$row)
+  #  j = as.numeric(info$col)
+  #  k = as.numeric(info$value)
+  #  df_xs1()[i,j] <- k
+  #})
+  #
+  #observeEvent(input$dt_xs2_cell_edit, {
+  #  info = input$dt_xs2_cell_edit
+  #  i = as.numeric(info$row)
+  #  j = as.numeric(info$col)
+  #  k = as.numeric(info$value)
+  #  df_xs2()[i,j] <- k
+  #})
+  
+  observeEvent(input$dt_qs_cell_edit, {
+    info = input$dt_qs_cell_edit
     i = as.numeric(info$row)
     j = as.numeric(info$col)
     k = as.numeric(info$value)
-    df_xs1()[i,j] <- k
-  })
-  
-  observeEvent(input$dt_xs2_cell_edit, {
-    info = input$dt_xs2_cell_edit
-    i = as.numeric(info$row)
-    j = as.numeric(info$col)
-    k = as.numeric(info$value)
-    df_xs2()[i,j] <- k
+    df_qs$discharges[i,j] <- k
   })
   
   xs1 <- reactive({df_xs1() %>% xs_prep(data = ., sta = !!as.name(colnames(.)[1]), elev = !!as.name(colnames(.)[2]))})
@@ -51,8 +71,8 @@ function(input, output, session) {
   rc2 <- reactive({xs_rating_curve(xs = xs2(), input$slope2, input$mannings2)})
   wse1 <- reactive({xs_rc_interpolate(rc = rc1(), discharge = input$input_q)})
   wse2 <- reactive({xs_rc_interpolate(rc = rc2(), discharge = input$input_q)})
-  res1 <- reactive({xs_eval_all(xs = xs1(), rc = rc1(), discharges = df_qs())})
-  res2 <- reactive({xs_eval_all(xs = xs2(), rc = rc2(), discharges = df_qs())})
+  res1 <- reactive({xs_eval_all(xs = xs1(), rc = rc1(), discharges = df_qs$discharges)})
+  res2 <- reactive({xs_eval_all(xs = xs2(), rc = rc2(), discharges = df_qs$discharges)})
   
   output$plot_xs <- renderPlot({
     if(input$enable1 & input$enable2) {  
