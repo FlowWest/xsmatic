@@ -85,7 +85,7 @@ xs_rc_interpolate <- function(rc, discharge) {
   rc %>%
     bind_rows(tribble(~selected_wse, ~discharge, TRUE, discharge)) %>%
     arrange(discharge) %>%
-    mutate(output_wse = zoo::na.approx(water_surface_elevation)) %>%
+    mutate(output_wse = zoo::na.approx(water_surface_elevation), na.rm = FALSE) %>%
     filter(selected_wse) %>% 
     pull(output_wse)
 }
