@@ -82,12 +82,17 @@ xs_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
 #' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the xs_rating_curve function
 #' @param discharge A discharge (cfs) number at which to determine the water surface elevation
 xs_rc_interpolate <- function(rc, discharge) {
+  out <- tryCatch({
   rc %>%
     bind_rows(tribble(~selected_wse, ~discharge, TRUE, discharge)) %>%
     arrange(discharge) %>%
     mutate(output_wse = zoo::na.approx(water_surface_elevation), na.rm = FALSE) %>%
     filter(selected_wse) %>% 
     pull(output_wse)
+  }, 
+  error=function(cond) {
+    return(NA)
+  })
 }
 
 #' This function takes a cross section data frame as returned by the xs_prep function, and a rating curve calculated by xs_rating_curve. It returns hydraulic parameters for one or more given discharges.

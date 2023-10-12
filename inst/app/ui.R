@@ -26,7 +26,7 @@ shinyUI(
           DTOutput("dt_xs2"),
         ),
         column(4, h2("Plot Result"),
-          numericInput("input_q", "Discharge (cfs) to plot", 1000, min = 1),
+          numericInput("input_q", "Discharge (cfs) to plot", NA, min = 0),
           plotOutput("plot_xs"),
           plotOutput("plot_rc"),
         )
@@ -39,6 +39,11 @@ shinyUI(
     fluidRow(
       column(3, 
           DTOutput("dt_qs"),
+          tags$div(
+          actionButton("dt_qs_addrow","+"),
+          actionButton("dt_qs_delrow","−")
+          ),
+          p(HTML("Enter flow frequency result based on one of the following sources: (a) regional regression at site location via <a href=https://streamstats.usgs.gov/ss/ target=_blank>StreamStats</a>; (b) gaged peak flow estimates calculated via <a href=https://doi.org/10.3133/tm4B5 target=_blank>Bulletin 17C</a> methods such as via <a href=https://www.hec.usace.army.mil/software/hec-ssp/ target=_blank>HEC-SSP</a> or as published on a StreamStats Gage Page; or (c) a weighted estimate of the two as documented in <a href=http://pubs.usgs.gov/sir/2012/5113 target=_blank>USGS SIR 2012-5113</a> (<em>Estimation for an Ungaged Site Near a Streamgage</em>).")),
           br(),
       ),
       column(7,

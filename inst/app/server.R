@@ -65,6 +65,14 @@ function(input, output, session) {
     df_qs$discharges[i,j] <- k
   })
   
+  observeEvent(input$dt_qs_addrow, {
+    df_qs$discharges <- df_qs$discharges %>% add_row(name = "Q_", discharge = 0)
+  })
+  
+  observeEvent(input$dt_qs_delrow, {
+    df_qs$discharges <- df_qs$discharges %>% filter(row_number() <= n()-1)
+  })
+  
   xs1 <- reactive({df_xs1() %>% xs_prep(data = ., sta = !!as.name(colnames(.)[1]), elev = !!as.name(colnames(.)[2]))})
   xs2 <- reactive({df_xs2() %>% xs_prep(data = ., sta = !!as.name(colnames(.)[1]), elev = !!as.name(colnames(.)[2]))})
   rc1 <- reactive({xs_rating_curve(xs = xs1(), input$slope1, input$mannings1)})
@@ -116,5 +124,7 @@ function(input, output, session) {
         DT::formatRound(columns=c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity"), digits=2)
     }
   })
+  
+
   
 }
