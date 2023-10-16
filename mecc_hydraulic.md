@@ -6,13 +6,14 @@ FlowWest
 ``` r
 library(tidyverse)
 ggplot2::theme_set(theme_classic())
-source("R/xs.R")
+#source("R/xs.R")
+library(xsmatic)
 ```
 
 ## Import cross sections
 
 ``` r
-xs_2007 <- read_csv("data/xs_2007.csv") %>%
+xs_2007 <- read_csv("data-raw/xs_2007.csv") %>%
   xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
@@ -22,7 +23,7 @@ xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() +
 ![](mecc_hydraulic_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ``` r
-xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
+xs_2023 <- read_csv("data-raw/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
   xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
@@ -400,3 +401,15 @@ depth_vs_discharge_2007 %>% xs_plot_rc()
 ```
 
 ![](mecc_hydraulic_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+
+``` r
+xs_plot2(xs_2007, xs_2023, wse_2007, wse_2023)
+```
+
+![](mecc_hydraulic_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+
+``` r
+xs_plot_rc2(depth_vs_discharge_2007, depth_vs_discharge_2023)
+```
+
+![](mecc_hydraulic_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
