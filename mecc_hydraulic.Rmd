@@ -10,13 +10,14 @@ output:
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 ggplot2::theme_set(theme_classic())
-source("R/xs.R")
+#source("R/xs.R")
+library(xsmatic)
 ```
 
 ## Import cross sections
 
 ```{r message=FALSE, warning=FALSE}
-xs_2007 <- read_csv("data/xs_2007.csv") %>%
+xs_2007 <- read_csv("data-raw/xs_2007.csv") %>%
   xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 
@@ -24,7 +25,7 @@ xs_2007 %>% ggplot(aes(y = gse, x = sta)) + geom_point() +
 ```
 
 ```{r message=FALSE, warning=FALSE}
-xs_2023 <- read_csv("data/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
+xs_2023 <- read_csv("data-raw/xs_2023_simplified.csv") %>% #_simplified.csv") %>%
   xs_prep(sta = station_ft, elev = elevation_ft) 
 
 xs_2023 %>% ggplot(aes(y = gse, x = sta)) + geom_point() + 

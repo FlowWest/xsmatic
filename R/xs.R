@@ -1,11 +1,13 @@
-library(tidyverse)
-
+#' @title Prep cross section data
+#' @description
 #' Input a table of station-elevation cross section coordinates, such as from a rod-and-level survey.
 #' Output a data frame with densified coordinates that can be used for post-processing.
 #' @param data A tibble or data frame containing station-elevation pairs
 #' @param sta The name of the station variable in the source data
 #' @param elev The name of the elevation variable in the source data 
 #' @param delta_x The x interval width to be used for densification. Narrower intervals will produce better results. Defaults to 0.1 ft.
+#' @md
+#' @export
 xs_prep <- function(data, sta, elev, delta_x=0.1) {
   
   # densify along the horizontal axis
@@ -37,10 +39,14 @@ xs_prep <- function(data, sta, elev, delta_x=0.1) {
   
 }
 
-#' Input a cross section data frame as returned by the xs_prep function.
+#' @title Calculate cross section hydraulic geometry properties
+#' @description
+#' Input a cross section data frame as returned by the `xs_prep` function.
 #' Outputs a named vector of hydraulic parameters (such as cross-sectional area and wetted perimeter) at the specified water surface elevation.
-#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
-#' @param water_elev The water surface elevation at which the 
+#' @param xs A tbl_df containing cross section geometry, as returned by the `xs_prep` function
+#' @param water_surface_elevation The water surface elevation at which the properties are calculated
+#' @md
+#' @export
 xs_calc_geom <- function(xs, water_surface_elevation) {
   xs %>% 
     arrange(sta) %>%
@@ -61,11 +67,15 @@ xs_calc_geom <- function(xs, water_surface_elevation) {
     list_flatten()
 }
 
-#' This function runs the xs_calc_geom function along a series of water surface elevations to return a rating curve of water surface elevation versus cross-sectional area and wetted perimeter. Then it applies Manning's equation to estimate depth and velocity. Returns a tbl_df with one row per water surface elevation.
-#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
+#' @title Create rating curve for cross section with given slope and roughness
+#' @description
+#' This function runs the `xs_calc_geom` function along a series of water surface elevations to return a rating curve of water surface elevation versus cross-sectional area and wetted perimeter. Then it applies Manning's equation to estimate depth and velocity. Returns a `tbl_df` with one row per water surface elevation.
+#' @param xs A `tbl_df` containing cross section geometry, as returned by the `xs_prep` function
 #' @param slope The channel profile slope at the cross section, used in Manning's equation.
 #' @param mannings_n The roughness coefficient for the cross section, used in Manning's equation.
 #' @param delta_z The elevation interval to be used for calculating outputs at different water surface elevations. Defaults to 0.1 ft.
+#' @md
+#' @export
 xs_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
   rating_curve <- seq(from=min(xs$gse)+delta_z, to=max(xs$gse), by=delta_z) %>% 
     as_tibble() %>%
@@ -78,9 +88,13 @@ xs_rating_curve <- function(xs, slope, mannings_n, delta_z=0.1) {
     arrange(discharge)
 }
 
+#' @title Interpolate WSE from rating curve at given discharge
+#' @description
 #' This function takes a rating curve calculated by xs_rating_curve and returns the water surface elevation for a given discharge. 
-#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param rc A `tbl_df` containing a depth-discharge rating curve, as returned by the `xs_rating_curve` function
 #' @param discharge A discharge (cfs) number at which to determine the water surface elevation
+#' @md
+#' @export
 xs_rc_interpolate <- function(rc, discharge) {
   out <- tryCatch({
   rc %>%
@@ -95,10 +109,14 @@ xs_rc_interpolate <- function(rc, discharge) {
   })
 }
 
-#' This function takes a cross section data frame as returned by the xs_prep function, and a rating curve calculated by xs_rating_curve. It returns hydraulic parameters for one or more given discharges.
-#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
-#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @title Calculate hydraulic geometry properties, WSE, and velocity at multiple discharges
+#' @description
+#' This function takes a cross section data frame as returned by the `xs_prep` function, and a rating curve calculated by `xs_rating_curve.` It returns hydraulic parameters for one or more given discharges.
+#' @param xs A `tbl_df` containing cross section geometry, as returned by the `xs_prep` function
+#' @param rc A `tbl_df` containing a depth-discharge rating curve, as returned by the `xs_rating_curve` function
 #' @param discharges A discharge (cfs) number at which to determine the water surface elevation, or a vector of multiple discharges. Vector can be named or unnamed. Also accepts a data frame or tibble containing a column called "discharge"
+#' @md
+#' @export
 xs_eval_all <- function(xs, rc, discharges) {
   if (!("data.frame" %in% class(discharges))){
     discharges <- enframe(discharges, value = "discharge")
@@ -112,9 +130,13 @@ xs_eval_all <- function(xs, rc, discharges) {
     mutate(velocity = discharge / cross_sectional_area)
 }
 
-#' This function takes a cross section data frame as returned by the xs_prep function, and plots it with 1:1 scale. Optionally also adds a given water surface line.
-#' @param xs A tbl_df containing cross section geometry, as returned by the xs_prep function
-#' @param wse A water surface elevation, as returned by the xs_rc_interpolate function
+#' @title Plot cross section
+#' @description
+#' This function takes a cross section data frame as returned by the `xs_prep` function, and plots it with 1:1 scale. Optionally also adds a given water surface line.
+#' @param xs A tbl_df containing cross section geometry, as returned by the `xs_prep` function
+#' @param wse A water surface elevation, as returned by the `xs_rc_interpolate` function
+#' @md
+#' @export
 xs_plot <- function(xs, wse = NA) {
   plt <- ggplot(data = xs) + geom_line(aes(x = sta, y = gse, linetype = "Terrain"))
   if (!is.na(wse)) {
@@ -124,17 +146,32 @@ xs_plot <- function(xs, wse = NA) {
   )
 }
 
-#' This function takes a cross section data frame as returned by the xs_prep function, and plots it with 1:1 scale. Optionally also adds a given water surface line.
-#' @param rc A tbl_df containing a depth-discharge rating curve, as returned by the xs_rating_curve function
-#' @param y The unquoted name of a rating curve variable to plot on the y axis. Defaults to max_depth.
-#' @param x The unquoted name of a rating curve variable to plot on the x axis. Defaults to discharge.
+#' @title Plot rating curve
+#' @description
+#' This function plots a rating curve as returned by the `xs_rating_curve` function.
+#' @param rc A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param y The unquoted name of a rating curve variable to plot on the y axis. Defaults to `water_surface_elevation`.
+#' @param x The unquoted name of a rating curve variable to plot on the x axis. Defaults to `discharge`.
 #' @param ylab If a custom y axis variable is selected, provide a text label for the y axis.
-#' @param ylab If a custom x axis variable is selected, provide a text label for the x axis.
+#' @param xlab If a custom x axis variable is selected, provide a text label for the x axis.
+#' @md
+#' @export
 xs_plot_rc <- function(rc, y = water_surface_elevation, x = discharge, ylab="Water Surface Elevation (ft)", xlab="Discharge (cfs)") {
   plt <- ggplot(data = rc) + geom_line(aes(y = {{y}}, x = {{x}}))
   return(plt + ylab(ylab) + xlab(xlab) + theme_classic())
 }
 
+#' @title Plot two cross sections
+#' @description
+#' This function takes two cross section datas frame as returned by the `xs_prep` function, and plots them with 1:1 scale. Optionally also adds a given water surface line.
+#' @param xs1 A tbl_df containing a cross section geometry, as returned by the `xs_prep` function
+#' @param xs2 A tbl_df containing a cross section geometry, as returned by the `xs_prep` function
+#' @param wse1 A water surface elevation for `xs1`, as returned by the `xs_rc_interpolate` function
+#' @param wse2 A water surface elevation for `xs2`, as returned by the `xs_rc_interpolate` function
+#' @param label1 The label for the first cross section `xs1`. Defaults to "Baseline"
+#' @param label2 The label for the second cross section `xs2`. Defaults to "Design"
+#' @md
+#' @export
 xs_plot2 <- function(xs1, xs2, wse1 = NA, wse2 = NA, label1 = "Baseline", label2 = "Design") {
   plt <- ggplot() + 
     geom_line(data = xs1, aes(x = sta, y = gse, color = label1, linetype = "Terrain")) + 
@@ -149,6 +186,14 @@ xs_plot2 <- function(xs1, xs2, wse1 = NA, wse2 = NA, label1 = "Baseline", label2
   )
 }
 
+#' @title Plot two rating curves
+#' @description
+#' This function plots two rating curves as returned by the `xs_rating_curve` function. For now, always plots water surface elevation versus discharge.
+#' @param rc A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param label1 The label for the first cross section `xs1`. Defaults to "Baseline"
+#' @param label2 The label for the second cross section `xs2`. Defaults to "Design"
+#' @md
+#' @export
 xs_plot_rc2 <- function(rc1, rc2, label1 = "Baseline", label2 = "Design") {
   plt <- ggplot() + 
     geom_line(data = rc1, aes(y = water_surface_elevation, x = discharge, color = label1)) +
@@ -156,3 +201,17 @@ xs_plot_rc2 <- function(rc1, rc2, label1 = "Baseline", label2 = "Design") {
     ylab("Water Surface Elevation (ft)") + xlab("Discharge (cfs)") + theme_classic() + theme(legend.position="top", legend.title=element_blank())
   return(plt)
 }
+
+
+#' @title Launch app
+#' @description
+#' This function launches the interactive cross section application.
+#' @export
+xs_run_app <- function() {
+  appDir <- system.file("app", package = "xsmatic")
+  if (appDir == "") {
+    stop("Could not find example directory. Try re-installing `xsmatic`.", call. = FALSE)
+  }
+  shiny::runApp(appDir, display.mode = "normal")
+}
+
