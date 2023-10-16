@@ -83,7 +83,7 @@ xs_plot2(xs_2007, xs_2023, wse_2007, wse_2023)
 
 Calculate hydraulic parameters at multiple discharges
 
-```{r eval-all, include=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+```{r eval-all, echo=TRUE, eval=FALSE, paged.print=TRUE}
 xs_eval_all(xs = xs_2023, rc = rc_2023, 
             discharges = c("Q2"=513, "Q5"=1320, "Q10"=1970, "Q25"=2780, "Q50"=3360, "Q100"=3980))
 ```

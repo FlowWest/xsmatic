@@ -87,6 +87,11 @@ xs_plot2(xs_2007, xs_2023, wse_2007, wse_2023)
 
 Calculate hydraulic parameters at multiple discharges
 
+``` r
+xs_eval_all(xs = xs_2023, rc = rc_2023, 
+            discharges = c("Q2"=513, "Q5"=1320, "Q10"=1970, "Q25"=2780, "Q50"=3360, "Q100"=3980))
+```
+
 | name | discharge | thalweg_elevation | water_surface_elevation | max_depth | cross_sectional_area | wetted_perimeter | velocity |
 |:-----|----------:|------------------:|------------------------:|----------:|---------------------:|-----------------:|---------:|
 | Q2   |       513 |             36.99 |                   41.24 |      4.25 |             47.22972 |         20.87879 | 10.86181 |
