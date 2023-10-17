@@ -41,22 +41,6 @@ function(input, output, session) {
                   caption="Enter Discharges for Tabular Output")
   })
   
-  #observeEvent(input$dt_xs1_cell_edit, {
-  #  info = input$dt_xs1_cell_edit
-  #  i = as.numeric(info$row)
-  #  j = as.numeric(info$col)
-  #  k = as.numeric(info$value)
-  #  df_xs1()[i,j] <- k
-  #})
-  #
-  #observeEvent(input$dt_xs2_cell_edit, {
-  #  info = input$dt_xs2_cell_edit
-  #  i = as.numeric(info$row)
-  #  j = as.numeric(info$col)
-  #  k = as.numeric(info$value)
-  #  df_xs2()[i,j] <- k
-  #})
-  
   observeEvent(input$dt_qs_cell_edit, {
     info = input$dt_qs_cell_edit
     i = as.numeric(info$row)
@@ -79,8 +63,8 @@ function(input, output, session) {
   rc2 <- reactive({xs_rating_curve(xs = xs2(), input$slope2, input$mannings2)})
   wse1 <- reactive({xs_rc_interpolate(rc = rc1(), discharge = input$input_q)})
   wse2 <- reactive({xs_rc_interpolate(rc = rc2(), discharge = input$input_q)})
-  res1 <- reactive({xs_eval_all(xs = xs1(), rc = rc1(), discharges = df_qs$discharges)})
-  res2 <- reactive({xs_eval_all(xs = xs2(), rc = rc2(), discharges = df_qs$discharges)})
+  res1 <- reactive({xs_eval_all(xs = xs1(), rc = rc1(), discharges = df_qs$discharges, sediment_transport = input$toggle_sed, slope = input$slope1)})
+  res2 <- reactive({xs_eval_all(xs = xs2(), rc = rc2(), discharges = df_qs$discharges, sediment_transport = input$toggle_sed, slope = input$slope2)})
   
   output$plot_xs <- renderPlot({
     if(input$enable1 & input$enable2) {  
@@ -102,29 +86,50 @@ function(input, output, session) {
     }
   })
   
-  column_name_list <- c("Profile Name",
-                        "Discharge (cfs)",
-                        "Thalweg Elev (ft)", 
-                        "WS Elev (ft)", 
-                        "Max Depth (ft)",
-                        "XS Area (ft)", 
-                        "Wet Perim (ft)", 
-                        "Velocity (ft/s)")
+  column_name_list <- reactive({
+    cols <- c("Profile Name",
+              "Discharge (cfs)",
+              "Thalweg Elev (ft)", 
+              "WS Elev (ft)", 
+              "Max Depth (ft)",
+              "XS Area (ft)", 
+              "Wet Perim (ft)", 
+              "Velocity (ft/s)"
+              )
+    if(input$toggle_sed){
+      c(cols,
+        "Hydraulic Radius (ft)",
+        "Critical Shields Number",
+        "Grain Size Mobilized (mm)",
+        "Shear Velocity (ft/sec)",
+        "Grain Size Suspended (mm)"
+        ) 
+    } else {
+      cols
+    }
+  })
   
+  numeric_columns <- reactive({
+    cols <- c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity")
+    if(input$toggle_sed){
+      c(cols, "hydraulic_radius", "critical_shields_number", "grain_size_mobilized_mm", "shear_velocity", "grain_size_suspended_mm")
+    } else {
+      cols
+    }
+  })
+
   output$eval_result1 <- renderDT({
     if(input$enable1) {
-      DT::datatable(res1(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 1", colnames = column_name_list) %>% 
-        DT::formatRound(columns=c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity"), digits=2)
+      DT::datatable(res1(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 1", colnames = column_name_list()) %>% 
+        DT::formatRound(columns=numeric_columns(), digits=2)
     }
   })
   
   output$eval_result2 <- renderDT({
     if(input$enable2) {
-      DT::datatable(res2(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 2", colnames = column_name_list) %>% 
-        DT::formatRound(columns=c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity"), digits=2)
+      DT::datatable(res2(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 2", colnames = column_name_list()) %>% 
+        DT::formatRound(columns=numeric_columns(), digits=2)
     }
   })
-  
-
   
 }

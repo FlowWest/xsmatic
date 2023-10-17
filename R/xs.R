@@ -44,13 +44,13 @@ xs_prep <- function(data, sta, elev, delta_x=0.1) {
 #' Input a cross section data frame as returned by the `xs_prep` function.
 #' Outputs a named vector of hydraulic parameters (such as cross-sectional area and wetted perimeter) at the specified water surface elevation.
 #' @param xs A tbl_df containing cross section geometry, as returned by the `xs_prep` function
-#' @param water_surface_elevation The water surface elevation at which the properties are calculated
+#' @param water_surface_elev The water surface elevation at which the properties are calculated
 #' @md
 #' @export
-xs_calc_geom <- function(xs, water_surface_elevation) {
+xs_calc_geom <- function(xs, water_surface_elev) {
   xs %>% 
     arrange(sta) %>%
-    mutate(wse = case_when(water_surface_elevation > gse ~ water_surface_elevation),
+    mutate(wse = case_when(water_surface_elev > gse ~ water_surface_elev),
            delta_x = abs(lag(sta, 1) - sta),
            delta_z = abs(lag(gse, 1) - gse),
            depth = wse - gse, 
@@ -58,7 +58,7 @@ xs_calc_geom <- function(xs, water_surface_elevation) {
     ) %>%
     filter(!is.na(wse)) %>% 
     summarize(thalweg_elevation = min(gse),
-              water_surface_elevation = water_surface_elevation,
+              water_surface_elevation = water_surface_elev,
               max_depth = water_surface_elevation - thalweg_elevation,
               cross_sectional_area = sum(delta_x * depth),
               wetted_perimeter = sum(hyp_length)
@@ -123,22 +123,17 @@ xs_eval_all <- function(xs, rc, discharges, sediment_transport = FALSE, slope = 
   if (!("data.frame" %in% class(discharges))){
     discharges <- enframe(discharges, value = "discharge")
   }
+  out <- discharges %>%
+    mutate(xs_parameters = map(discharge, function(discharge) {
+      rc %>% 
+        xs_rc_interpolate(., discharge) %>% 
+        xs_calc_geom(xs, .)})) %>% 
+    unnest_wider(xs_parameters) %>%
+    mutate(velocity = discharge / cross_sectional_area)
   if (sediment_transport & !is.na(slope)) {
-    out <- discharges %>%
-      mutate(xs_parameters = map(discharge, function(discharge) {
-        rc %>% 
-          xs_rc_interpolate(., discharge) %>% 
-          xs_calc_geom_sed(xs, ., slope)})) %>% 
-      unnest_wider(xs_parameters) %>%
-      mutate(velocity = discharge / cross_sectional_area)
-  } else {
-    out <- discharges %>%
-      mutate(xs_parameters = map(discharge, function(discharge) {
-        rc %>% 
-          xs_rc_interpolate(., discharge) %>% 
-          xs_calc_geom(xs, .)})) %>% 
-      unnest_wider(xs_parameters) %>%
-      mutate(velocity = discharge / cross_sectional_area)
+    out <- out %>%
+      mutate(sediment_result = xs_sediment_transport(xs, water_surface_elevation, slope)) %>% 
+      unnest_wider(sediment_result)
   }
   return(out)
 }
@@ -215,7 +210,6 @@ xs_plot_rc2 <- function(rc1, rc2, label1 = "Baseline", label2 = "Design") {
   return(plt)
 }
 
-
 #' @title Launch app
 #' @description
 #' This function launches the interactive cross section application.
@@ -228,17 +222,37 @@ xs_run_app <- function() {
   shiny::runApp(appDir, display.mode = "normal")
 }
 
+#' @title Back-calculate Manning's n given known slope
+#' @description
+#' Input a cross section data frame as returned by the `xs_prep` function, along with a WSE and slope as might be gathered in a high water mark survey, and a known discharge having produced the given water surface elevation.
+#' Returns a Manning's roughness coefficient by back-calculating from Manning's equation.
+#' @param xs A tbl_df containing cross section geometry, as returned by the `xs_prep` function
+#' @param water_surface_elev The water surface elevation at which the properties are calculated
+#' @param slope The channel profile slope at the cross section, used in Manning's equation (normal depth assumption)
+#' @param discharge A known discharge value in cfs
+xs_mannings_n <- function(xs, water_surface_elev, slope, discharge) {
+  xs_calc_geom(xs, water_surface_elev) %>% 
+    enframe() %>% 
+    pivot_wider() %>%
+    unnest(cols=c(thalweg_elevation, water_surface_elevation, max_depth, cross_sectional_area, wetted_perimeter)) %>%
+    mutate(
+      hydraulic_radius = cross_sectional_area / wetted_perimeter,
+      mannings_n = 1.486 * cross_sectional_area * hydraulic_radius^(2/3) 
+      * slope^(1/2) * discharge^(-1)
+    ) %>%
+    pull(mannings_n)
+}
+
 #' @title Calculate cross section hydraulic geometry properties and sediment transport estimates
 #' @description
 #' Input a cross section data frame as returned by the `xs_prep` function.
-#' Outputs a named vector of hydraulic parameters (such as cross-sectional area and wetted perimeter) at the specified water surface elevation,
-#' as well as estimates for median mobilized bed grain size, and maximum suspended load grain size
+#' Outputs a named vector with estimates for median mobilized bed grain size and maximum suspended load grain size
 #' @param xs A tbl_df containing cross section geometry, as returned by the `xs_prep` function
-#' @param water_surface_elevation The water surface elevation at which the properties are calculated
+#' @param water_surface_elev The water surface elevation at which the properties are calculated
 #' @param slope The channel profile slope at the cross section, used in Shield's equation and estimation of shear velocity (normal depth assumption)
 #' @md
 #' @export
-xs_calc_geom_sed <- function(xs, water_surface_elevation, slope) {
+xs_sediment_transport <- function(xs, water_surface_elev, slope) {
   
   # gravitational constant, cm/s2
   g_cgs <- 981
@@ -248,9 +262,10 @@ xs_calc_geom_sed <- function(xs, water_surface_elevation, slope) {
   # kinematic viscosity of water, cm2/s
   nu_cgs <- 0.01
   
-  xs_calc_geom(xs, water_surface_elevation) %>% 
+  xs_calc_geom(xs, water_surface_elev) %>% 
     enframe() %>% 
     pivot_wider() %>%
+    unnest(cols=c(thalweg_elevation, water_surface_elevation, max_depth, cross_sectional_area, wetted_perimeter)) %>%
     mutate(
       hydraulic_radius = cross_sectional_area / wetted_perimeter,
       # metric conversions
@@ -271,8 +286,7 @@ xs_calc_geom_sed <- function(xs, water_surface_elevation, slope) {
       grain_size_suspended_phi = -log2(grain_size_suspended_mm),
       shear_velocity = shear_velocity_cm_s / 30.48 # ft/sec
     ) %>% 
-    drop(hydraulic_radius_m, cross_sectional_area_m2, shear_velocity_cm_s, 
-         ends_with("_phi"), ends_with("_ndim")) %>% 
+    select(hydraulic_radius, critical_shields_number, grain_size_mobilized_mm, shear_velocity, grain_size_suspended_mm) %>%
     as.list() %>% 
     list_flatten()
 }
