@@ -101,7 +101,7 @@ function(input, output, session) {
         "Hydraulic Radius (ft)",
         "Critical Shields Number",
         "Grain Size Mobilized (mm)",
-        "Shear Velocity (ft/sec)",
+        "Shear Velocity (ft/s)",
         "Grain Size Suspended (mm)"
         ) 
     } else {

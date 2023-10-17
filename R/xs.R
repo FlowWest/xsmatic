@@ -132,7 +132,7 @@ xs_eval_all <- function(xs, rc, discharges, sediment_transport = FALSE, slope = 
     mutate(velocity = discharge / cross_sectional_area)
   if (sediment_transport & !is.na(slope)) {
     out <- out %>%
-      mutate(sediment_result = xs_sediment_transport(xs, water_surface_elevation, slope)) %>% 
+      mutate(sediment_result = map(water_surface_elevation, function(x) {xs_sediment_transport(xs, x, slope)})) %>% 
       unnest_wider(sediment_result)
   }
   return(out)

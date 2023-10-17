@@ -42,7 +42,7 @@ shinyUI(
           tags$div(
           actionButton("dt_qs_addrow","+"),
           actionButton("dt_qs_delrow","−"),
-          checkboxInput("toggle_sed","Calculate Sediment Transport")
+          checkboxInput("toggle_sed","Calculate Sediment Transport (BETA)")
           ),
           p(HTML("Enter flow frequency result based on one of the following sources: (a) regional regression at site location via <a href=https://streamstats.usgs.gov/ss/ target=_blank>StreamStats</a>; (b) gaged peak flow estimates calculated via <a href=https://doi.org/10.3133/tm4B5 target=_blank>Bulletin 17C</a> methods such as via <a href=https://www.hec.usace.army.mil/software/hec-ssp/ target=_blank>HEC-SSP</a> or as published on a StreamStats Gage Page; or (c) a weighted estimate of the two as documented in <a href=http://pubs.usgs.gov/sir/2012/5113 target=_blank>USGS SIR 2012-5113</a> (<em>Estimation for an Ungaged Site Near a Streamgage</em>).")),
           br(),
