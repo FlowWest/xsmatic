@@ -1,14 +1,9 @@
-MECC Hydraulic Analysis
+Simple Cross Section Hydraulics using Manning’s Equation
 ================
 
-**[`mecc_hydraulic.Rmd`](mecc_hydraulic.Rmd)** is the source code for
-the specific use in the MECC hydraulic report.
-
-**[`mecc_hydraulic.md`](mecc_hydraulic.md)** contains the outputs as
-incorporated into the MECC hydraulic report.
-
-**[`xs.R`](R/xs.R)** contains generic functions for conducting Manning’s
-equation hydraulic analyses based on surveyed cross section data:
+The **`xsmatic`** package contains generic functions for conducting
+Manning’s equation hydraulic analyses based on surveyed cross section
+data:
 
 - Clean up station-elevation table and densify coordinate points
 
@@ -22,16 +17,16 @@ equation hydraulic analyses based on surveyed cross section data:
 - Use a rating curve to return a water surface elevation for a given
   discharge value.
 
-These functions can now be accessed via the **`xsmatic`** package.
+To install the package:
 
 ``` r
 # authenticate with a github account within the FlowWest organization
-usethis::use_git_config(user.name = "yourGithubUsername", user.email = "username@flowwest.com")
-usethis::create_github_token() # copy the personal access token 
-credentials::set_github_pat() # enter the personal access token into the prompt
+usethis::use_git_config(user.name = "yourGithubUsername", user.email = "email@flowwest.com")
+usethis::create_github_token() # copy the personal access token and paste below
 
 # install private package
-remotes::install_github("flowwest/mecc-hydraulic-analysis")
+devtools::install_github(repo = "flowwest/xsmatic", 
+                         auth_token = "TOKEN-HERE")
 ```
 
 Load the package:
@@ -41,7 +36,8 @@ library(tidyverse)
 library(xsmatic)
 ```
 
-Run via the interactive prompt:
+Run via the interactive prompt (also published at
+[flowwest.shinyapps.io/xsmatic](https://flowwest.shinyapps.io/xsmatic)):
 
 ``` r
 xs_run_app()
