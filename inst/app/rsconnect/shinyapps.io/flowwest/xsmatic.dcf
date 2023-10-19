@@ -5,7 +5,7 @@ account: flowwest
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10239600
-bundleId: 7824955
+bundleId: 7825022
 url: https://flowwest.shinyapps.io/xsmatic/
 version: 1
 asMultiple: FALSE
