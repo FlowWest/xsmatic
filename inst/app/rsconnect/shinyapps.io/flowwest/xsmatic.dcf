@@ -1,0 +1,12 @@
+name: xsmatic
+title: xsmatic
+username: flowwest
+account: flowwest
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10239600
+bundleId: 7824955
+url: https://flowwest.shinyapps.io/xsmatic/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
