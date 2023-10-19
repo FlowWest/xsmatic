@@ -33,7 +33,8 @@ usethis::create_github_token() # copy the personal access token
 credentials::set_github_pat() # enter the personal access token into the prompt
 
 # install private package
-remotes::install_github("flowwest/mecc-hydraulic-analysis")
+devtools::install_github(repo = "flowwest/mecc-hydraulic-analysis", 
+                         auth_token = "TOKEN-HERE")
 ```
 
 Load the package:

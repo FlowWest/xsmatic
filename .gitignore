@@ -4,3 +4,4 @@
 .Ruserdata
 data-raw/test
 data-raw/usgs
+deploy.R
