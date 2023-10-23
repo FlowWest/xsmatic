@@ -336,7 +336,7 @@ xs_plot_sediment <- function(xs, rc, slope) {
     geom_line(aes(y = grain_size_mobilized_mm, x = discharge, linetype="Bed Mobilization")) + 
     geom_line(aes(y = grain_size_suspended_mm, x = discharge, linetype="Suspended Load")) + 
     scale_y_continuous(trans='log2')
-  return(plt + ylab("Maximum Grain Size (mm)") + xlab("Discharge (cfs)") + theme_classic()) + theme(legend.position="top", legend.title=element_blank())
+  return(plt + ylab("Maximum Grain Size (mm)") + xlab("Discharge (cfs)") + theme_classic() + theme(legend.position="top") + labs(color = NULL, linetype = NULL))
 }
 
 #' @title Plot two sediment transport rating curves
@@ -362,5 +362,5 @@ xs_plot_sediment2 <- function(xs1, rc1, xs2, rc2, label1 = "Baseline", label2 = 
     geom_line(data = out2, aes(y = grain_size_mobilized_mm, x = discharge, color = label2, linetype="Bed Mobilization")) + 
     geom_line(data = out2, aes(y = grain_size_suspended_mm, x = discharge, color = label2, linetype="Suspended Load")) + 
     scale_y_continuous(trans='log2')
-  return(plt + ylab("Maximum Grain Size (mm)") + xlab("Discharge (cfs)") + theme_classic()) + theme(legend.position="top", legend.title=element_blank())
+  return(plt + ylab("Maximum Grain Size (mm)") + xlab("Discharge (cfs)") + theme_classic() + theme(legend.position="top") + labs(color = NULL, linetype = NULL))
 }
