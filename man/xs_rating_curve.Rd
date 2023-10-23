@@ -9,7 +9,7 @@ xs_rating_curve(xs, slope, mannings_n, delta_z = 0.1)
 \arguments{
 \item{xs}{A \code{tbl_df} containing cross section geometry, as returned by the \code{xs_prep} function}
 
-\item{slope}{The channel profile slope at the cross section, used in Manning's equation.}
+\item{slope}{The channel profile slope at the cross section, used in Manning's equation (normal depth assumption)}
 
 \item{mannings_n}{The roughness coefficient for the cross section, used in Manning's equation.}
 

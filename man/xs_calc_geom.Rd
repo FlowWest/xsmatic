@@ -4,12 +4,12 @@
 \alias{xs_calc_geom}
 \title{Calculate cross section hydraulic geometry properties}
 \usage{
-xs_calc_geom(xs, water_surface_elevation)
+xs_calc_geom(xs, water_surface_elev)
 }
 \arguments{
 \item{xs}{A tbl_df containing cross section geometry, as returned by the \code{xs_prep} function}
 
-\item{water_surface_elevation}{The water surface elevation at which the properties are calculated}
+\item{water_surface_elev}{The water surface elevation at which the properties are calculated}
 }
 \description{
 Input a cross section data frame as returned by the \code{xs_prep} function.

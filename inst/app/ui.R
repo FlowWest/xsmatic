@@ -51,6 +51,7 @@ shinyUI(
         DTOutput("eval_result1"),
         DTOutput("eval_result2"),
         br(),
+        plotOutput("plot_sed"),
       )
     )
     )

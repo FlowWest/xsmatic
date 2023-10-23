@@ -4,7 +4,7 @@
 \alias{xs_eval_all}
 \title{Calculate hydraulic geometry properties, WSE, and velocity at multiple discharges}
 \usage{
-xs_eval_all(xs, rc, discharges)
+xs_eval_all(xs, rc, discharges, sediment_transport = FALSE, slope = NA)
 }
 \arguments{
 \item{xs}{A \code{tbl_df} containing cross section geometry, as returned by the \code{xs_prep} function}
@@ -12,6 +12,10 @@ xs_eval_all(xs, rc, discharges)
 \item{rc}{A \code{tbl_df} containing a depth-discharge rating curve, as returned by the \code{xs_rating_curve} function}
 
 \item{discharges}{A discharge (cfs) number at which to determine the water surface elevation, or a vector of multiple discharges. Vector can be named or unnamed. Also accepts a data frame or tibble containing a column called "discharge"}
+
+\item{sediment_transport}{Specify whether to calculate bed mobilization and grain suspension. Defaults to FALSE}
+
+\item{slope}{If calculating sediment transport, specify a slope to use for the calculation (normal depth assumption)}
 }
 \description{
 This function takes a cross section data frame as returned by the \code{xs_prep} function, and a rating curve calculated by \code{xs_rating_curve.} It returns hydraulic parameters for one or more given discharges.

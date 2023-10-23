@@ -7,11 +7,13 @@
 xs_plot_rc2(rc1, rc2, label1 = "Baseline", label2 = "Design")
 }
 \arguments{
+\item{rc1}{A \code{tbl_df} containing a depth-discharge rating curve, as returned by the xs_rating_curve function}
+
+\item{rc2}{A \code{tbl_df} containing a depth-discharge rating curve, as returned by the xs_rating_curve function}
+
 \item{label1}{The label for the first cross section \code{xs1}. Defaults to "Baseline"}
 
 \item{label2}{The label for the second cross section \code{xs2}. Defaults to "Design"}
-
-\item{rc}{A \code{tbl_df} containing a depth-discharge rating curve, as returned by the xs_rating_curve function}
 }
 \description{
 This function plots two rating curves as returned by the \code{xs_rating_curve} function. For now, always plots water surface elevation versus discharge.

@@ -268,6 +268,34 @@ all_parms_2023 <- xs_eval_all(xs = xs_2023, rc = depth_vs_discharge_2023, discha
 all_parms_2023 %>% knitr::kable()
 ```
 
+```{r message=FALSE, warning=FALSE}
+xs_eval_over_rc(xs = xs_2023, rc = depth_vs_discharge_2023)
+```
+```{r}
+# xs_plot_sediment <- function(xs, rc, slope = NA) {
+#   plt <- xs_eval_over_rc(xs, rc, sediment_transport = TRUE, slope = slope) |>
+#       ggplot() + geom_line(aes(y = grain_size_mobilized_mm, x = discharge)) + geom_line(aes(y = grain_size_suspended_mm, x = discharge))
+#   return(plt + ylab("ylab") + xlab("xlab") + theme_classic())
+# }
+# 
+# xs_plot_sediment(xs = xs_2023, rc = depth_vs_discharge_2023)
+# 
+# xs_plot_sediment2 <- function(xs1, rc1, xs2, rc2, slope = NA) {
+#   out1 <- xs_eval_over_rc(xs1, rc1, sediment_transport = TRUE, slope = slope)
+#   out2 <- xs_eval_over_rc(xs2, rc2, sediment_transport = TRUE, slope = slope)
+#   plt <- ggplot() + 
+#     geom_line(data = out1, aes(y = grain_size_mobilized_mm, x = discharge, linetype="Bed Mobilization")) + 
+#     geom_line(data = out1, aes(y = grain_size_suspended_mm, x = discharge, linetype="Suspended Load")) + 
+#     geom_line(data = out2, aes(y = grain_size_mobilized_mm, x = discharge, linetype="Bed Mobilization")) + 
+#     geom_line(data = out2, aes(y = grain_size_suspended_mm, x = discharge, linetype="Suspended Load"))
+#   return(plt + ylab("Maximum Grain Size (mm)") + xlab("Discharge (cfs)") + theme_classic())
+# }
+# 
+# xs_plot_sediment(xs = xs_2023, rc = depth_vs_discharge_2023)
+
+
+```
+
 ## plotting functions
 
 ```{r message=FALSE, warning=FALSE}
@@ -286,3 +314,7 @@ xs_plot2(xs_2007, xs_2023, wse_2007, wse_2023)
 ```{r message=FALSE, warning=FALSE}
 xs_plot_rc2(depth_vs_discharge_2007, depth_vs_discharge_2023)
 ```
+
+To add:
+* Select discharge reference based on the selected row
+* Vertical discharge reference line on the rating curve

@@ -60,8 +60,10 @@ xs_calc_geom <- function(xs, water_surface_elev) {
     summarize(thalweg_elevation = min(gse),
               water_surface_elevation = water_surface_elev,
               max_depth = water_surface_elevation - thalweg_elevation,
+              #avg_depth = mean(water_surface_elev - gse),
               cross_sectional_area = sum(delta_x * depth),
               wetted_perimeter = sum(hyp_length)
+              #hydraulic_radius = cross_sectional_area / wetted_perimeter
     ) %>% 
     as.list() %>% 
     list_flatten()
@@ -197,7 +199,8 @@ xs_plot2 <- function(xs1, xs2, wse1 = NA, wse2 = NA, label1 = "Baseline", label2
 #' @title Plot two rating curves
 #' @description
 #' This function plots two rating curves as returned by the `xs_rating_curve` function. For now, always plots water surface elevation versus discharge.
-#' @param rc A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param rc1 A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param rc2 A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
 #' @param label1 The label for the first cross section `xs1`. Defaults to "Baseline"
 #' @param label2 The label for the second cross section `xs2`. Defaults to "Design"
 #' @md
@@ -253,7 +256,6 @@ xs_mannings_n <- function(xs, water_surface_elev, slope, discharge) {
 #' @md
 #' @export
 xs_sediment_transport <- function(xs, water_surface_elev, slope) {
-  
   # gravitational constant, cm/s2
   g_cgs <- 981
   # grain density and water density, g/cm3
@@ -261,7 +263,7 @@ xs_sediment_transport <- function(xs, water_surface_elev, slope) {
   rho_cgs <- 1.00
   # kinematic viscosity of water, cm2/s
   nu_cgs <- 0.01
-  
+  # run calculation
   xs_calc_geom(xs, water_surface_elev) %>% 
     tibble::enframe() %>% 
     pivot_wider() %>%
@@ -289,4 +291,76 @@ xs_sediment_transport <- function(xs, water_surface_elev, slope) {
     select(hydraulic_radius, critical_shields_number, grain_size_mobilized_mm, shear_velocity, grain_size_suspended_mm) %>%
     as.list() %>% 
     list_flatten()
+}
+
+# xs_plot_eval <- function(xs, rc, y = grain_size_mobilized_mm, x = discharge, ylab="Grain Size Mobilized (mm)", xlab="Discharge (cfs)", slope = NA) {
+#   plt <- xs_eval_over_rc(xs, rc, slope = slope) |>
+#     ggplot() + geom_line(aes(y = {{y}}, x = {{x}}))
+#   return(plt + ylab(ylab) + xlab(xlab) + theme_classic())
+# }
+# xs_plot_eval2 <- function(xs, rc, x, y, slope = NA) {
+#   out1 <- xs_eval_over_rc(xs1, rc1, x = {{x}}, y = {{y}}, slope = slope1)
+#   out2 <- xs_eval_over_rc(xs2, rc2, x = {{x}}, y = {{y}}, slope = slope2)
+#   ggplot() + 
+#       plt <- ggplot(data = rc) + geom_line(aes(y = {{y}}, x = {{x}}))
+#   return(plt + ylab(ylab) + xlab(xlab) + theme_classic())
+# }
+
+#' @title Calculate hydraulic geometry properties, WSE, and velocity across all discharges in a rating curve
+#' @description
+#' This function takes a cross section data frame as returned by the `xs_prep` function, and a rating curve calculated by `xs_rating_curve.` It returns hydraulic parameters for all discharges in the provided rating curve
+#' @param xs A `tbl_df` containing cross section geometry, as returned by the `xs_prep` function
+#' @param rc A `tbl_df` containing a depth-discharge rating curve, as returned by the `xs_rating_curve` function
+#' @param sediment_transport Specify whether to calculate bed mobilization and grain suspension. Defaults to FALSE
+#' @param slope If calculating sediment transport, specify a slope to use for the calculation (normal depth assumption)
+#' @md
+#' @export
+xs_eval_over_rc <- function(xs, rc, sediment_transport = FALSE, slope = NA) {
+  rc %>% 
+    mutate(eval_out = xs_eval_all(xs, ., c("Profile " = discharge), sediment_transport, slope)) |> 
+    select(eval_out) |>
+    unnest_wider(col = eval_out)
+}
+
+#' @title Plot sediment transport rating curve
+#' @description
+#' This function plots the sediment transport rating curves showing grain size mobilized and suspended.
+#' @param xs A tbl_df containing a cross section geometry, as returned by the `xs_prep` function
+#' @param rc A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param slope Specify a slope to use for the calculation (normal depth assumption)
+#' @md
+#' @export
+xs_plot_sediment <- function(xs, rc, slope) {
+  plt <- xs_eval_over_rc(xs, rc, sediment_transport = TRUE, slope = slope) |>
+    ggplot() + 
+    geom_line(aes(y = grain_size_mobilized_mm, x = discharge, linetype="Bed Mobilization")) + 
+    geom_line(aes(y = grain_size_suspended_mm, x = discharge, linetype="Suspended Load")) + 
+    scale_y_continuous(trans='log2')
+  return(plt + ylab("Maximum Grain Size (mm)") + xlab("Discharge (cfs)") + theme_classic()) + theme(legend.position="top", legend.title=element_blank())
+}
+
+#' @title Plot two sediment transport rating curves
+#' @description
+#' This function plots two sediment transport rating curves showing grain size mobilized and suspended.
+#' @param xs1 A tbl_df containing a cross section geometry, as returned by the `xs_prep` function
+#' @param xs2 A tbl_df containing a cross section geometry, as returned by the `xs_prep` function
+#' @param rc1 A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param rc2 A `tbl_df` containing a depth-discharge rating curve, as returned by the xs_rating_curve function
+#' @param label1 The label for the first cross section `xs1`. Defaults to "Baseline"
+#' @param label2 The label for the second cross section `xs2`. Defaults to "Design"
+#' @param slope1 Specify a slope to use for the calculation (normal depth assumption)
+#' @param slope2 Specify a slope to use for the calculation (normal depth assumption)
+
+#' @md
+#' @export
+xs_plot_sediment2 <- function(xs1, rc1, xs2, rc2, label1 = "Baseline", label2 = "Design", slope1, slope2) {
+  out1 <- xs_eval_over_rc(xs1, rc1, sediment_transport = TRUE, slope = slope1)
+  out2 <- xs_eval_over_rc(xs2, rc2, sediment_transport = TRUE, slope = slope2)
+  plt <- ggplot() + 
+    geom_line(data = out1, aes(y = grain_size_mobilized_mm, x = discharge, color = label1, linetype="Bed Mobilization")) + 
+    geom_line(data = out1, aes(y = grain_size_suspended_mm, x = discharge, color = label1, linetype="Suspended Load")) + 
+    geom_line(data = out2, aes(y = grain_size_mobilized_mm, x = discharge, color = label2, linetype="Bed Mobilization")) + 
+    geom_line(data = out2, aes(y = grain_size_suspended_mm, x = discharge, color = label2, linetype="Suspended Load")) + 
+    scale_y_continuous(trans='log2')
+  return(plt + ylab("Maximum Grain Size (mm)") + xlab("Discharge (cfs)") + theme_classic()) + theme(legend.position="top", legend.title=element_blank())
 }

@@ -86,6 +86,18 @@ function(input, output, session) {
     }
   })
   
+  output$plot_sed <- renderPlot({
+    if (input$toggle_sed & input$slope1){
+      if(input$enable1 & input$enable2) {  
+        xs_plot_sediment2(xs1 = xs1(), xs2 = xs2(), rc1 = rc1(), rc2 = rc2(), slope1 = input$slope1, slope2 = input$slope2)
+      } else if(input$enable1) {
+        xs_plot_sediment(xs = xs1(), rc = rc1(), slope = input$slope1)
+      } else if(input$enable2) {
+        xs_plot_sediment(xs = xs2(), rc = rc2(), slope = input$slope2)
+      }
+    }
+  })
+  
   column_name_list <- reactive({
     cols <- c("Profile Name",
               "Discharge (cfs)",
