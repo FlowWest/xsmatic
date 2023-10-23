@@ -89,5 +89,21 @@ xs_eval_all(xs = xs_2023, rc = rc_2023,
             discharges = c("Q2"=513, "Q5"=1320, "Q10"=1970, "Q25"=2780, "Q50"=3360, "Q100"=3980)) %>% knitr::kable()
 ```
 
+Quick sediment transport estimates
 
+```{r sediment, echo=TRUE, eval=FALSE, paged.print=TRUE}
+xs_eval_all(xs = xs_2023, rc = rc_2023, 
+            discharges = c("Q2"=513, "Q5"=1320, "Q10"=1970, "Q25"=2780, "Q50"=3360, "Q100"=3980),
+            sediment_transport = TRUE, slope = 0.021)
+```
+
+```{r sediment-kable, echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+xs_eval_all(xs = xs_2023, rc = rc_2023, 
+            discharges = c("Q2"=513, "Q5"=1320, "Q10"=1970, "Q25"=2780, "Q50"=3360, "Q100"=3980),
+            sediment_transport = TRUE, slope = 0.021) %>% knitr::kable()
+```
+
+```{r sediment-plot, message=FALSE, warning=FALSE}
+xs_plot_sediment(xs = xs_2023, rc = rc_2023, slope = 0.021)
+```
 

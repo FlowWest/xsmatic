@@ -11,7 +11,8 @@ xs_plot_sediment2(
   rc2,
   label1 = "Baseline",
   label2 = "Design",
-  slope
+  slope1,
+  slope2
 )
 }
 \arguments{
@@ -27,7 +28,9 @@ xs_plot_sediment2(
 
 \item{label2}{The label for the second cross section \code{xs2}. Defaults to "Design"}
 
-\item{slope}{If calculating sediment transport, specify a slope to use for the calculation (normal depth assumption)}
+\item{slope1}{Specify a slope to use for the calculation (normal depth assumption)}
+
+\item{slope2}{Specify a slope to use for the calculation (normal depth assumption)}
 }
 \description{
 This function plots two sediment transport rating curves showing grain size mobilized and suspended.

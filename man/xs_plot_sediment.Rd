@@ -11,7 +11,7 @@ xs_plot_sediment(xs, rc, slope)
 
 \item{rc}{A \code{tbl_df} containing a depth-discharge rating curve, as returned by the xs_rating_curve function}
 
-\item{slope}{If calculating sediment transport, specify a slope to use for the calculation (normal depth assumption)}
+\item{slope}{Specify a slope to use for the calculation (normal depth assumption)}
 }
 \description{
 This function plots the sediment transport rating curves showing grain size mobilized and suspended.
