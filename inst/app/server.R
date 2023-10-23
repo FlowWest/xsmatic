@@ -19,7 +19,7 @@ function(input, output, session) {
 
   output$dt_xs1 <- renderDT({
     DT::datatable(df_xs1(), 
-                  editable = FALSE, 
+                  editable = FALSE, selection = 'single',
                   colnames=c("Station (ft)", "Elevation (ft)"), 
                   options = list(dom = 'tp'), 
                   caption="Cross Section 1 Input")
@@ -27,7 +27,7 @@ function(input, output, session) {
   
   output$dt_xs2 <- renderDT({
     DT::datatable(df_xs2(), 
-                  editable = FALSE, 
+                  editable = FALSE, selection = 'single',
                   colnames=c("Station (ft)", "Elevation (ft)"), 
                   options = list(dom = 'tp'), 
                   caption="Cross Section 2 Input")
@@ -35,7 +35,7 @@ function(input, output, session) {
   
   output$dt_qs <- renderDT({
     DT::datatable(df_qs$discharges, 
-                  editable = TRUE, 
+                  editable = TRUE, selection = 'single',
                   colnames=c("Profile Name", "Discharge (cfs)"), 
                   options = list(dom = 't'), 
                   caption="Enter Discharges for Tabular Output")
@@ -113,14 +113,14 @@ function(input, output, session) {
   
   output$eval_result1 <- renderDT({
     if(input$enable1) {
-      DT::datatable(res1(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 1", colnames = column_name_list) %>% 
+      DT::datatable(res1(), editable = FALSE, selection = 'single', autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 1", colnames = column_name_list) %>% 
         DT::formatRound(columns=c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity"), digits=2)
     }
   })
   
   output$eval_result2 <- renderDT({
     if(input$enable2) {
-      DT::datatable(res2(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 2", colnames = column_name_list) %>% 
+      DT::datatable(res2(), editable = FALSE, selection = 'single', autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 2", colnames = column_name_list) %>% 
         DT::formatRound(columns=c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity"), digits=2)
     }
   })
