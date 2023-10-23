@@ -120,14 +120,14 @@ function(input, output, session) {
 
   output$eval_result1 <- renderDT({
     if(input$enable1) {
-      DT::datatable(res1(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 1", colnames = column_name_list()) %>% 
+      DT::datatable(res1(), editable = FALSE, options = list(dom = 't'), caption="Cross Section 1", colnames = column_name_list()) %>% 
         DT::formatRound(columns=numeric_columns(), digits=2)
     }
   })
   
   output$eval_result2 <- renderDT({
     if(input$enable2) {
-      DT::datatable(res2(), editable = FALSE, autoHideNavigation = TRUE, options = list(dom = 't'), caption="Cross Section 2", colnames = column_name_list()) %>% 
+      DT::datatable(res2(), editable = FALSE, options = list(dom = 't'), caption="Cross Section 2", colnames = column_name_list()) %>% 
         DT::formatRound(columns=numeric_columns(), digits=2)
     }
   })

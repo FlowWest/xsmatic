@@ -121,7 +121,7 @@ xs_rc_interpolate <- function(rc, discharge) {
 #' @export
 xs_eval_all <- function(xs, rc, discharges, sediment_transport = FALSE, slope = NA) {
   if (!("data.frame" %in% class(discharges))){
-    discharges <- enframe(discharges, value = "discharge")
+    discharges <- tibble::enframe(discharges, value = "discharge")
   }
   out <- discharges %>%
     mutate(xs_parameters = map(discharge, function(discharge) {
@@ -232,7 +232,7 @@ xs_run_app <- function() {
 #' @param discharge A known discharge value in cfs
 xs_mannings_n <- function(xs, water_surface_elev, slope, discharge) {
   xs_calc_geom(xs, water_surface_elev) %>% 
-    enframe() %>% 
+    tibble::enframe() %>% 
     pivot_wider() %>%
     unnest(cols=c(thalweg_elevation, water_surface_elevation, max_depth, cross_sectional_area, wetted_perimeter)) %>%
     mutate(
@@ -263,7 +263,7 @@ xs_sediment_transport <- function(xs, water_surface_elev, slope) {
   nu_cgs <- 0.01
   
   xs_calc_geom(xs, water_surface_elev) %>% 
-    enframe() %>% 
+    tibble::enframe() %>% 
     pivot_wider() %>%
     unnest(cols=c(thalweg_elevation, water_surface_elevation, max_depth, cross_sectional_area, wetted_perimeter)) %>%
     mutate(
