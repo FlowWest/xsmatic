@@ -57,7 +57,7 @@ shinyUI(
     )
     )
   ),
-  tabPanel("Hydraulic Geometry",
+  tabPanel("Single Cross Section",
    fluidPage(
      fluidRow(
        column(3, h2("Input Cross Section"),
