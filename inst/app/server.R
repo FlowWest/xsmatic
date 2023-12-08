@@ -177,7 +177,11 @@ function(input, output, session) {
     })
   
   wse_hwm <- reactive({
-    input$wse_hwm
+    if (input$hwm_mode=="wse") {
+      wse_hwm_derived()
+    } else {
+      input$wse_hwm
+    }
   })
   
   result_hwm <- reactive({
@@ -300,8 +304,4 @@ function(input, output, session) {
     }
   })
   
-  # make active field read only
-  # make all three fade out for "default mode" 
-  # make 'tabular output' show full hydrualic output for non default mode
-  # then figure out how to do wse mode which will involve interpolate_rc
 }
