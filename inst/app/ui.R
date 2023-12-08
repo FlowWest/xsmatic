@@ -74,7 +74,7 @@ shinyUI(
                                               "Manning's Q (known WSE, n, S)" = "q",
                                               "Manning's n (known Q, WSE, S)" = "n",
                                               "Manning's S (known Q, WSE, n)" = "s",
-                                              "Interpolate WSE (known Q, S, n)" = "wse")),
+                                              "Estimate WSE (known Q, S, n)" = "wse")),
                      numericInput("wse_hwm", "Water Surface Elev. (ft)", NA),
                      numericInput("discharge_hwm", "Q = Streamflow (cfs)", NA, min = 0, step=1),
                      numericInput("mannings_hwm", "n = Roughness", NA, min = 0.001, step=0.001),
