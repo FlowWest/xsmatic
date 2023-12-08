@@ -1,4 +1,7 @@
 shinyUI(
+  tabsetPanel(
+  tabPanel("Baseline vs Design",
+  shinyjs::useShinyjs(),
   fluidPage(
     fluidRow(
         column(3, h2("Cross Section 1 (Baseline)"),
@@ -53,4 +56,36 @@ shinyUI(
       )
     )
     )
+  ),
+  tabPanel("Hydraulic Geometry",
+   fluidPage(
+     fluidRow(
+       column(3, h2("Input Cross Section"),
+              fileInput("file_xs_hwm", "Choose (Station,Elevation) CSV File",
+                        multiple = FALSE,
+                        accept = c("text/csv",
+                                   "text/comma-separated-values,text/plain",
+                                   ".csv")),
+              DTOutput("dt_xs_hwm"),
+       ),
+              column(3, h2("Parameters"),
+                     radioButtons("hwm_mode", label = "Calculation Mode", selected = "default",
+                                  choices = c("Hydraulic Geometry at WSE" = "default",
+                                              "Manning's Q (given WSE, n, S)" = "q",
+                                              "Manning's n (given Q, WSE, S)" = "n",
+                                              "Manning's S (given Q, WSE, n)" = "s",
+                                              "Manning's WSE (given Q, S, n)" = "wse")),
+                     numericInput("wse_hwm", "WSE (ft)", NA),
+                     numericInput("discharge_hwm", "Q = Streamflow (cfs)", NA, min = 0, step=1),
+                     numericInput("mannings_hwm", "n = Roughness", NA, min = 0.001, step=0.001),
+                     numericInput("slope_hwm", "S = Slope (ft/ft)", NA, min = 0.001, step=0.001),
+              DTOutput("dt_result_hwm"),),
+       column(4, 
+              plotOutput("plot_xs_hwm"),
+              plotOutput("plot_rc_hwm"),
+              )
+       ),
+   )
+  ),
+  )
   )
