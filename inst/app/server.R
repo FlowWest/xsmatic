@@ -194,9 +194,11 @@ function(input, output, session) {
     if(!is.na(input$wse_hwm)) {
      # if(input$wse_hwm >= min(df_xs_hwm()$elev)){
       DT::datatable(df_result_hwm(), 
+                    caption = "Hydraulic Geometry",
                     editable = FALSE, 
                     colnames=NULL,#c("Parameter", "Value"), 
-                    options = list(dom = 't', ordering = FALSE),
+                    options = list(dom = 't', ordering = FALSE,
+                                   columnDefs = list(list(className = 'dt-right', targets = 1))),
                     selection = "none",
                     rownames = FALSE,
                     class = list(stripe = FALSE)
@@ -279,22 +281,22 @@ function(input, output, session) {
   
   observe({
     if (input$hwm_mode=="n") {
-      updateNumericInput(inputId = "mannings_hwm", value = mannings_hwm())
+      updateNumericInput(inputId = "mannings_hwm", value = mannings_hwm() %>% signif(2))
     }
   })
   observe({
     if (input$hwm_mode=="s") {
-      updateNumericInput(inputId = "slope_hwm", value = slope_hwm())
+      updateNumericInput(inputId = "slope_hwm", value = slope_hwm() %>% signif(2))
     }
   })
   observe({
     if (input$hwm_mode=="q") {
-      updateNumericInput(inputId = "discharge_hwm", value = discharge_hwm())
+      updateNumericInput(inputId = "discharge_hwm", value = discharge_hwm() %>% round(2))
     }
   })
   observe({
     if (input$hwm_mode=="wse") {
-      updateNumericInput(inputId = "wse_hwm", value = wse_hwm_derived())
+      updateNumericInput(inputId = "wse_hwm", value = wse_hwm_derived() %>% round(2))
     }
   })
   
