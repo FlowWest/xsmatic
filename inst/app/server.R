@@ -63,8 +63,16 @@ function(input, output, session) {
   rc2 <- reactive({xs_rating_curve(xs = xs2(), input$slope2, input$mannings2)})
   wse1 <- reactive({xs_rc_interpolate(rc = rc1(), discharge = input$input_q)})
   wse2 <- reactive({xs_rc_interpolate(rc = rc2(), discharge = input$input_q)})
-  res1 <- reactive({xs_eval_all(xs = xs1(), rc = rc1(), discharges = df_qs$discharges, sediment_transport = input$toggle_sed, slope = input$slope1)})
-  res2 <- reactive({xs_eval_all(xs = xs2(), rc = rc2(), discharges = df_qs$discharges, sediment_transport = input$toggle_sed, slope = input$slope2)})
+  res1 <- reactive({xs_eval_all(xs = xs1(), rc = rc1(), 
+                                discharges = df_qs$discharges 
+                                #sediment_transport = input$toggle_sed, 
+                                #slope = input$slope1
+                                )})
+  res2 <- reactive({xs_eval_all(xs = xs2(), rc = rc2(), 
+                                discharges = df_qs$discharges 
+                                #sediment_transport = input$toggle_sed, 
+                                #slope = input$slope2
+                                )})
   
   output$plot_xs <- renderPlot({
     if(input$enable1 & input$enable2) {  
@@ -86,17 +94,17 @@ function(input, output, session) {
     }
   })
   
-  output$plot_sed <- renderPlot({
-    if (input$toggle_sed & input$slope1){
-      if(input$enable1 & input$enable2) {  
-        xs_plot_sediment2(xs1 = xs1(), xs2 = xs2(), rc1 = rc1(), rc2 = rc2(), slope1 = input$slope1, slope2 = input$slope2)
-      } else if(input$enable1) {
-        xs_plot_sediment(xs = xs1(), rc = rc1(), slope = input$slope1)
-      } else if(input$enable2) {
-        xs_plot_sediment(xs = xs2(), rc = rc2(), slope = input$slope2)
-      }
-    }
-  })
+  # output$plot_sed <- renderPlot({
+  #   if (input$toggle_sed & input$slope1){
+  #     if(input$enable1 & input$enable2) {  
+  #       xs_plot_sediment2(xs1 = xs1(), xs2 = xs2(), rc1 = rc1(), rc2 = rc2(), slope1 = input$slope1, slope2 = input$slope2)
+  #     } else if(input$enable1) {
+  #       xs_plot_sediment(xs = xs1(), rc = rc1(), slope = input$slope1)
+  #     } else if(input$enable2) {
+  #       xs_plot_sediment(xs = xs2(), rc = rc2(), slope = input$slope2)
+  #     }
+  #   }
+  # })
   
   column_name_list <- reactive({
     cols <- c("Profile Name",
@@ -108,26 +116,28 @@ function(input, output, session) {
               "Wet Perim (ft)", 
               "Velocity (ft/s)"
               )
-    if(input$toggle_sed){
-      c(cols,
-        "Hydraulic Radius (ft)",
-        "Critical Shields Number",
-        "Grain Size Mobilized (mm)",
-        "Shear Velocity (ft/s)",
-        "Grain Size Suspended (mm)"
-        ) 
-    } else {
-      cols
-    }
+    # if(input$toggle_sed){
+    #   c(cols,
+    #     "Hydraulic Radius (ft)",
+    #     "Critical Shields Number",
+    #     "Grain Size Mobilized (mm)",
+    #     "Shear Velocity (ft/s)",
+    #     "Grain Size Suspended (mm)"
+    #     ) 
+    # } else {
+    #   cols
+    # }
+    cols
   })
   
   numeric_columns <- reactive({
     cols <- c("thalweg_elevation", "water_surface_elevation", "max_depth", "cross_sectional_area", "wetted_perimeter", "velocity")
-    if(input$toggle_sed){
-      c(cols, "hydraulic_radius", "critical_shields_number", "grain_size_mobilized_mm", "shear_velocity", "grain_size_suspended_mm")
-    } else {
-      cols
-    }
+    #if(input$toggle_sed){
+    #  c(cols, "hydraulic_radius", "critical_shields_number", "grain_size_mobilized_mm", "shear_velocity", "grain_size_suspended_mm")
+    #} else {
+    #  cols
+    #}
+    cols
   })
 
   output$eval_result1 <- renderDT({
